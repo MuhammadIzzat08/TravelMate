@@ -27,7 +27,8 @@ import 'package:firebase_core/firebase_core.dart';
 
 import 'View/itinerary.dart';
 import 'View/login.dart';
-import 'View/registration.dart'; // Import Firebase Core
+import 'View/registration.dart';
+import 'View/tripRoom.dart'; // Import Firebase Core
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,9 +45,11 @@ class MyApp extends StatelessWidget {
         primaryColor: Color(0xFFE4F1EE),
       ),
       //home: RegistrationPage(),
-      //home: LoginPage(),
+      home: LoginScreen(),
       //home: ItineraryScreen(),
-      home: FilteredItineraryScreen(),
+      //home: FilteredItineraryScreen(),
+      //home: TripRoomView(tripRoomId: '',),
+      //home: CreateTripRoomView(),
     );
   }
 }
