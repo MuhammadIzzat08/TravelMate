@@ -53,3 +53,28 @@ class TripRoom {
     );
   }
 }
+
+// User Trip Room model
+class UserTripRoom {
+  final String userId;
+  final String tripRoomId;
+
+  UserTripRoom({
+    required this.userId,
+    required this.tripRoomId,
+  });
+
+  factory UserTripRoom.fromMap(Map<String, dynamic> map) {
+    return UserTripRoom(
+      userId: map['UserId'],
+      tripRoomId: map['TripRoomId'],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'UserId': userId,
+      'TripRoomId': tripRoomId,
+    };
+  }
+}
