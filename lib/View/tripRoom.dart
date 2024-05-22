@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:travelmate/View/itinerary.dart';
 import 'package:travelmate/View/login.dart';
 import 'package:travelmate/View/profile.dart';
+import 'package:travelmate/View/wishlist.dart';
 import '../Controller/tripRoom.dart';
 import '../Model/tripRoom.dart';
 import 'package:image_picker/image_picker.dart';
@@ -82,7 +83,7 @@ class _TripRoomViewState extends State<TripRoomView> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => LoginScreen(),
+                  builder: (context) => WishlistScreen(tripRoomId:  widget.tripRoomIds.first),
                 ),
               );
             },
@@ -99,7 +100,7 @@ class _TripRoomViewState extends State<TripRoomView> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => FilteredItineraryScreen(),
+                builder: (context) => FilteredItineraryScreen(tripRoomId: widget.tripRoomIds.first,),
               ),
             );
           },
@@ -309,102 +310,6 @@ class TripRoomSearchDelegate extends SearchDelegate {
   }
 }
 
-
-/*
-class MainPage extends StatefulWidget {
-  @override
-  _MainPageState createState() => _MainPageState();
-}
-
-class _MainPageState extends State<MainPage> {
-  int _selectedIndex = 0;
-  late Future<List<TripRoom>> _tripRoomsFuture;
-  final TripRoomController _tripRoomController = TripRoomController();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  @override
-  void initState() {
-    super.initState();
-    _tripRoomsFuture = _fetchTripRooms();
-  }
-
-  Future<List<TripRoom>> _fetchTripRooms() async {
-    User? user = _auth.currentUser;
-    if (user != null) {
-      return await TripRoomController.getUserTripRooms(user.uid);
-    } else {
-      throw Exception('User not logged in');
-    }
-  }
-
-  Future<void> _searchTripRooms(String searchTerm) async {
-    setState(() {
-      _tripRoomsFuture = TripRoomController.searchTripRooms(searchTerm);
-    });
-  }
-
-  Future<void> _refreshTripRooms() async {
-    setState(() {
-      _tripRoomsFuture = _fetchTripRooms();
-    });
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    List<Widget> _pages = [
-      TripRoomListView(
-        tripRoomsFuture: _tripRoomsFuture,
-        searchTripRooms: _searchTripRooms,
-        refreshTripRooms: _refreshTripRooms, // Pass the refresh function
-      ),
-      UserProfilePage(),
-    ];
-
-    return Scaffold(
-      body: _pages[_selectedIndex],
-      floatingActionButton: _selectedIndex == 0
-          ? FloatingActionButton(
-        onPressed: () async {
-          bool? result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CreateTripRoomPage(),
-            ),
-          );
-          if (result == true) {
-            _refreshTripRooms(); // Refresh the trip rooms list
-          }
-        },
-        child: Icon(Icons.add),
-        backgroundColor: Color(0xFF7A9E9F), // Match the color of other buttons
-        tooltip: 'Create Room',
-      )
-          : null,
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Trip',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Color(0xFF7A9E9F),
-        onTap: _onItemTapped,
-      ),
-    );
-  }
-}
-*/
 class MainPage extends StatefulWidget {
   @override
   _MainPageState createState() => _MainPageState();

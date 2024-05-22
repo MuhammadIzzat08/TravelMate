@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:travelmate/Controller/wishlist.dart';
+import 'package:travelmate/Model/wishlist.dart';
 import '../Controller/itinerary.dart';
 import '../Model/itinerary.dart';
 
@@ -49,12 +51,18 @@ class ItineraryScreen extends StatelessWidget {
 //filtered itinerary screen///////////////////////////////////////////////////
 
 class FilteredItineraryScreen extends StatefulWidget {
+  final String tripRoomId; // Add this line to receive tripRoomId
+
+  const FilteredItineraryScreen({Key? key, required this.tripRoomId}) : super(key: key);
+
   @override
   _FilteredItineraryScreenState createState() => _FilteredItineraryScreenState();
 }
 
 class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
   final FilteredItineraryController _controller = FilteredItineraryController();
+
+  List<LocationFilter> filteredLocations = [];
 
   List<String> selectedPlaceTypes = [];
   List<String> selectedCuisineTypes = [];
@@ -77,32 +85,27 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
             child: Text('Filter Locations'),
           ),
           Expanded(
-            child: FutureBuilder(
-              future: _controller.filterLocations(
-                placeType: selectedPlaceTypes.isNotEmpty ? selectedPlaceTypes : null,
-                cuisineType: selectedCuisineTypes.isNotEmpty ? selectedCuisineTypes : null,
-                priceRate: selectedPriceRates.isNotEmpty ? selectedPriceRates : null,
-                purpose: selectedPurposes.isNotEmpty ? selectedPurposes : null,
-                accessability: selectedAccessibilities.isNotEmpty ? selectedAccessibilities : null,
-              ),
-              builder: (context, AsyncSnapshot<List<LocationFilter>> snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else {
-                  final locations = snapshot.data!;
-                  return ListView.builder(
-                    itemCount: locations.length,
-                    itemBuilder: (context, index) {
-                      final location = locations[index];
-                      return ListTile(
-                        title: Text(location.name),
-                        subtitle: Text(location.description),
+            child: ListView.builder(
+              itemCount: filteredLocations.length,
+              itemBuilder: (context, index) {
+                final location = filteredLocations[index];
+                return Card(
+                  child: ListTile(
+                    title: Text(location.name),
+                    subtitle: Text(location.description),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PlaceDetailsScreen(
+                            tripRoomId: widget.tripRoomId, // Pass tripRoomId here
+                            location: location,
+                          ),
+                        ),
                       );
                     },
-                  );
-                }
+                  ),
+                );
               },
             ),
           ),
@@ -126,7 +129,14 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
                     _buildFilterCheckboxList(
                       'Place Type:',
                       selectedPlaceTypes,
-                      ['Nature', 'City', 'Beach', 'History', 'Halal', 'Non-Halal'],
+                      [
+                        'Nature',
+                        'City',
+                        'Beach',
+                        'History',
+                        'Halal',
+                        'Non-Halal'
+                      ],
                       setState,
                     ),
                     _buildFilterCheckboxList(
@@ -178,8 +188,17 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
     );
   }
 
-  void _applyFilters() {
-    setState(() {}); // Force rebuild to apply filter
+  void _applyFilters() async {
+    final filteredResult = await _controller.filterLocations(
+      placeType: selectedPlaceTypes.isNotEmpty ? selectedPlaceTypes : null,
+      cuisineType: selectedCuisineTypes.isNotEmpty ? selectedCuisineTypes : null,
+      priceRate: selectedPriceRates.isNotEmpty ? selectedPriceRates : null,
+      purpose: selectedPurposes.isNotEmpty ? selectedPurposes : null,
+      accessability: selectedAccessibilities.isNotEmpty ? selectedAccessibilities : null,
+    );
+    setState(() {
+      filteredLocations = filteredResult.cast<LocationFilter>(); //kat siniiiiii
+    });
   }
 
   Widget _buildFilterCheckboxList(String title, List<String> selectedValues, List<String> options, StateSetter setState) {
@@ -204,3 +223,65 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
     );
   }
 }
+
+
+
+class PlaceDetailsScreen extends StatefulWidget {
+  final LocationFilter location;
+  final String tripRoomId; // Trip room ID
+
+  const PlaceDetailsScreen({Key? key, required this.location, required this.tripRoomId}) : super(key: key);
+
+  @override
+  _PlaceDetailsScreenState createState() => _PlaceDetailsScreenState();
+}
+
+class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
+  final WishlistController _wishlistController = WishlistController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.location.name),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Description: ${widget.location.description}'),
+            Text('Type: ${widget.location.type}'),
+            Text('Operating Hours: ${widget.location.operatingHour}'),
+            Text('Price: ${widget.location.price}'),
+            Text('Cuisine: ${widget.location.cuisine}'),
+            Text('Purpose: ${widget.location.purpose}'),
+            Text('Accessibility: ${widget.location.accessability}'),
+            ElevatedButton(
+              onPressed: _addToWishlist,
+              child: Text('Add To Wishlist'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addToWishlist() {
+    final wishlistItem = WishlistItem(
+      tripRoomId: widget.tripRoomId, // Use the passed trip room ID
+      locationId: widget.location.id,
+    );
+    _wishlistController.addToWishlist(wishlistItem).then((_) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Added to Wishlist'),
+      ));
+    }).catchError((error) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Failed to add to Wishlist: $error'),
+      ));
+    });
+  }
+}
+
+
