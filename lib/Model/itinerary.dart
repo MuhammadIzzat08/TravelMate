@@ -1,3 +1,4 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Location {
@@ -79,5 +80,7 @@ class LocationFilter {
     );
   }
 }
+
+
 
 

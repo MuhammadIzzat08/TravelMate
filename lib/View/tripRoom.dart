@@ -51,19 +51,6 @@ class _TripRoomViewState extends State<TripRoomView> {
     }
   }
 
-  /*Future<void> _addMember() async {
-    // For demonstration, let's add a static user ID
-    String userId = 'newUserId';
-    try {
-      await TripRoomController.addMember(tripRoom.id, userId);
-      setState(() {
-        tripRoom.members.add(userId);
-      });
-    } catch (e) {
-      // Handle error
-      print('Error adding member: $e'); // Debug print
-    }
-  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +140,7 @@ class _TripRoomViewState extends State<TripRoomView> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => LoginScreen(),
+                  builder: (context) => TripRoomDetailsPage(tripRoomId:  widget.tripRoomIds.first,),
                 ),
               );
               break;
@@ -746,4 +733,136 @@ class _CreateTripRoomPageState extends State<CreateTripRoomPage> {
   }
 }
 
+class TripRoomDetailsPage extends StatefulWidget {
+  final String tripRoomId;
 
+  TripRoomDetailsPage({required this.tripRoomId});
+
+  @override
+  _TripRoomDetailsPageState createState() => _TripRoomDetailsPageState();
+}
+
+class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
+  final _emailController = TextEditingController();
+  bool _isLoading = false;
+  TripRoom? _tripRoom;
+
+  @override
+  void initState() {
+    super.initState();
+    print('TripRoomDetailsPage initialized with tripRoomId: ${widget.tripRoomId}');
+    _loadTripRoomDetails();
+  }
+
+  // Function to load trip room details
+  Future<void> _loadTripRoomDetails() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      if (widget.tripRoomId.isEmpty) {
+        throw Exception('tripRoomId is empty');
+      }
+      TripRoom tripRoom = await TripRoomController.getTripRoom(widget.tripRoomId);
+      setState(() {
+        _tripRoom = tripRoom;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading trip room details: $e')),
+      );
+    }
+  }
+
+  // Function to add a member to the trip room
+  Future<void> _addMember() async {
+    if (_tripRoom == null) {
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      String email = _emailController.text.trim();
+      String? userId = await TripRoomController.getUserIdByEmail(email);
+
+      if (userId != null) {
+        await TripRoomController.addMemberToTripRoom(widget.tripRoomId, userId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Member added successfully')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User not found')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error adding member: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Trip Room Details'),
+        backgroundColor: Color(0xFF7A9E9F),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator())
+            : _tripRoom == null
+            ? Center(child: Text('Trip room details not found'))
+            : Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            // Display trip room details
+            Text(
+              'Trip Room ID: ${_tripRoom!.id}',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Trip Room Name: ${_tripRoom!.name}',
+              style: TextStyle(fontSize: 18),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Trip Room Profile Picture: ${_tripRoom!.profilePicture}',
+              style: TextStyle(fontSize: 18),
+            ),
+            // Add more details as needed...
+            SizedBox(height: 20),
+            Text(
+              'Add Member:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            TextFormField(
+              controller: _emailController,
+              decoration: InputDecoration(labelText: 'Member Email'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _addMember,
+              child: Text('Add Member'),
+              style: ElevatedButton.styleFrom(
+                primary: Color(0xFF7A9E9F),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

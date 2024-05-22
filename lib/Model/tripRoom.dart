@@ -78,3 +78,30 @@ class UserTripRoom {
     };
   }
 }
+
+
+// models/tripRoomMember.dart
+
+class TripRoomMember {
+  final String tripRoomId;
+  final String userId;
+
+  TripRoomMember({
+    required this.tripRoomId,
+    required this.userId,
+  });
+
+  factory TripRoomMember.fromMap(Map<String, dynamic> map) {
+    return TripRoomMember(
+      tripRoomId: map['TripRoomId'],
+      userId: map['UserId'],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'TripRoomId': tripRoomId,
+      'UserId': userId,
+    };
+  }
+}
