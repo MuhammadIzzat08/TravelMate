@@ -1,10 +1,16 @@
 // views/trip_room_view.dart
 
+import 'dart:async';
 import 'dart:typed_data';
-
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:travelmate/authservice.dart'; // Import your authentication service
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:travelmate/Controller/itinerary.dart';
+import 'package:travelmate/Model/itinerary.dart';
+import 'package:travelmate/View/expense.dart';
 import 'package:travelmate/View/itinerary.dart';
 import 'package:travelmate/View/login.dart';
 import 'package:travelmate/View/profile.dart';
@@ -15,7 +21,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 
-class TripRoomView extends StatefulWidget {
+/*class TripRoomView extends StatefulWidget {
   final List<String> tripRoomIds;
 
   TripRoomView({required this.tripRoomIds});
@@ -28,17 +34,27 @@ class _TripRoomViewState extends State<TripRoomView> {
   late TripRoom tripRoom;
   bool isLoading = true;
   String? errorMessage;
+  List<Location> itinerary = [];
+  late String loggedInUserId; // Declare a variable to store the logged-in user's ID
 
   @override
   void initState() {
     super.initState();
-    print('TripRoomView initialized with tripRoomIds: ${widget.tripRoomIds}'); // Debug print
+    _fetchLoggedInUserId(); // Fetch the logged-in user's ID
     _fetchTripRoom();
+    _fetchItinerary();
+  }
+
+  Future<void> _fetchLoggedInUserId() async {
+    try {
+      loggedInUserId = await AuthService.getLoggedInUserId(); // Fetch the logged-in user's ID
+    } catch (e) {
+      print('Error fetching logged-in user ID: $e');
+    }
   }
 
   Future<void> _fetchTripRoom() async {
     try {
-      // Assuming we want to fetch the first trip room in the list for demonstration
       tripRoom = await TripRoomController.getTripRoom(widget.tripRoomIds.first);
       setState(() {
         isLoading = false;
@@ -48,7 +64,19 @@ class _TripRoomViewState extends State<TripRoomView> {
         isLoading = false;
         errorMessage = e.toString();
       });
-      print('Error fetching trip room: $e'); // Debug print
+      print('Error fetching trip room: $e');
+    }
+  }
+
+  Future<void> _fetchItinerary() async {
+    try {
+      final controller = TripRoomController(); // Create an instance of TripRoomController
+      final itineraryData = await controller.getItinerary(widget.tripRoomIds.first);
+      setState(() {
+        itinerary = (itineraryData?.locations ?? []); // Access locations from itineraryData, or use empty list if null
+      });
+    } catch (e) {
+      print('Error fetching itinerary: $e'); // Debug print
     }
   }
 
@@ -88,28 +116,32 @@ class _TripRoomViewState extends State<TripRoomView> {
               );
             },
           ),
-          /*IconButton(
-            icon: Icon(Icons.person_add),
-            onPressed: _addMember,
-          ),*/
         ],
       ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => FilteredItineraryScreen(tripRoomId: widget.tripRoomIds.first,),
-              ),
-            );
-          },
-          child: Text('Create Itinerary'),
-        ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: itinerary.length,
+              itemBuilder: (context, index) {
+                final location = itinerary[index];
+                return ListTile(
+                  title: Text(location.name ?? 'Unknown Location'),
+                  subtitle: Text(location.description ?? 'No description'),
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.pushNamed(context, '/create-trip-room');
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FilteredItineraryScreen(tripRoomId: widget.tripRoomIds.first,),
+            ),
+          );
         },
         child: Icon(Icons.add),
       ),
@@ -133,7 +165,7 @@ class _TripRoomViewState extends State<TripRoomView> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => LoginScreen(),
+                  builder: (context) => ExpenseList(tripRoomId: widget.tripRoomIds.first, loggedInUserId: loggedInUserId,),
                 ),
               );
               break;
@@ -141,7 +173,7 @@ class _TripRoomViewState extends State<TripRoomView> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => TripRoomDetailsPage(tripRoomId:  widget.tripRoomIds.first,),
+                  builder: (context) => TripRoomDetailsPage(tripRoomId:  widget.tripRoomIds.first),
                 ),
               );
               break;
@@ -149,9 +181,346 @@ class _TripRoomViewState extends State<TripRoomView> {
         },
       ),
     );
+  }
+}*/
 
+/*class TripRoomView extends StatefulWidget {
+  final List<String> tripRoomIds;
+
+  TripRoomView({super.key, required this.tripRoomIds});
+
+  @override
+  _TripRoomViewState createState() => _TripRoomViewState();
+}
+
+class _TripRoomViewState extends State<TripRoomView> {
+  late TripRoom tripRoom;
+  bool isLoading = true;
+  String? errorMessage;
+  List<Location> itinerary = [];
+  late String loggedInUserId;
+  late GoogleMapController mapController;
+  Position? userPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLoggedInUserId();
+    _fetchTripRoom();
+    _fetchItinerary();
+    _determinePosition();
+  }
+
+  Future<void> _fetchLoggedInUserId() async {
+    try {
+      loggedInUserId = await AuthService.getLoggedInUserId();
+    } catch (e) {
+      print('Error fetching logged-in user ID: $e');
+    }
+  }
+
+  Future<void> _fetchTripRoom() async {
+    try {
+      tripRoom = await TripRoomController.getTripRoom(widget.tripRoomIds.first);
+      setState(() {
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        errorMessage = e.toString();
+      });
+      print('Error fetching trip room: $e');
+    }
+  }
+
+  Future<void> _fetchItinerary() async {
+    try {
+      final controller = ItineraryController();
+      final itineraryData = await controller.getItinerary(widget.tripRoomIds.first);
+      setState(() {
+        itinerary = itineraryData;
+      });
+    } catch (e) {
+      print('Error fetching itinerary: $e');
+    }
+  }
+
+  Future<void> _determinePosition() async {
+    final controller = ItineraryController();
+    try {
+      final position = await controller.determinePosition();
+      setState(() {
+        userPosition = position;
+      });
+    } catch (e) {
+      print('Error fetching user location: $e');
+    }
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Trip Room'),
+        ),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (errorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Trip Room'),
+        ),
+        body: Center(child: Text('Error: $errorMessage')),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(tripRoom.name),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.favorite),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => WishlistScreen(tripRoomId: widget.tripRoomIds.first),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: GoogleMap(
+              onMapCreated: _onMapCreated,
+              initialCameraPosition: CameraPosition(
+                target: userPosition != null
+                    ? LatLng(userPosition!.latitude, userPosition!.longitude)
+                    : LatLng(0, 0),
+                zoom: 14.0,
+              ),
+              markers: itinerary.map((location) {
+                return Marker(
+                  markerId: MarkerId(location.id),
+                  position: LatLng(location.latitude!, location.longitude!),
+                  infoWindow: InfoWindow(
+                    title: location.name,
+                    snippet: location.description,
+                  ),
+                );
+              }).toSet(),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: itinerary.length,
+              itemBuilder: (context, index) {
+                final location = itinerary[index];
+                return ListTile(
+                  title: Text(location.name ?? 'Unknown Location'),
+                  subtitle: Text(location.description ?? 'No description'),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FilteredItineraryScreen(tripRoomId: widget.tripRoomIds.first),
+            ),
+          );
+        },
+        child: Icon(Icons.add),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Itinerary'),
+          BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Expense'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+        ],
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ItineraryScreen(),
+                ),
+              );
+              break;
+            case 1:
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ExpenseList(tripRoomId: widget.tripRoomIds.first, loggedInUserId: loggedInUserId),
+                ),
+              );
+              break;
+            case 2:
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => TripRoomDetailsPage(tripRoomId: widget.tripRoomIds.first),
+                ),
+              );
+              break;
+          }
+        },
+      ),
+    );
+  }
+}*/
+
+
+class TripRoomView extends StatefulWidget {
+  final String tripRoomId;
+
+  TripRoomView({required this.tripRoomId}) {
+    print("TripRoomView constructor called with tripRoomId: $tripRoomId");
+  }
+
+  @override
+  _TripRoomViewState createState() => _TripRoomViewState();
+}
+
+class _TripRoomViewState extends State<TripRoomView> {
+  GoogleMapController? mapController;
+  Position? _currentPosition;
+  List<Location> _itinerary = [];
+  final ItineraryController _itineraryController = ItineraryController();
+
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+    _loadItinerary();
+  }
+
+  void _getCurrentLocation() async {
+    try {
+      print("Attempting to get current location...");
+      Position position = await _itineraryController.determinePosition().timeout(Duration(seconds: 10));
+      print("Current location obtained: $position");
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+        });
+      }
+    } catch (e) {
+      print("Error getting current location: $e");
+      if (e is TimeoutException) {
+        // Handle timeout specifically
+        print("Location request timed out");
+      }
+    }
+  }
+
+  void _loadItinerary() async {
+    try {
+      print("Loading itinerary for tripRoomId: ${widget.tripRoomId}");
+      List<Location> itinerary = await _itineraryController.getItinerary(widget.tripRoomId);
+      if (mounted) {
+        setState(() {
+          _itinerary = itinerary;
+        });
+      }
+      print("Itinerary loaded: $itinerary");
+    } catch (e) {
+      print("Error loading itinerary: $e");
+    }
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+  }
+
+  Set<Marker> _createMarkers() {
+    return _itinerary.map((location) {
+      if (location.latitude != null && location.longitude != null) {
+        return Marker(
+          markerId: MarkerId(location.id),
+          position: LatLng(location.latitude!, location.longitude!),
+          infoWindow: InfoWindow(
+            title: location.name ?? 'Unknown',
+            snippet: location.description ?? 'No description',
+          ),
+        );
+      }
+      return null;
+    }).whereType<Marker>().toSet(); // Filter out any null values
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Trip Room"),
+      ),
+      body: _currentPosition == null
+          ? Center(child: CircularProgressIndicator())
+          : Column(
+        children: [
+          Expanded(
+            child: GoogleMap(
+              onMapCreated: _onMapCreated,
+              initialCameraPosition: CameraPosition(
+                target: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                zoom: 12,
+              ),
+              markers: _createMarkers(),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _itinerary.length,
+              itemBuilder: (context, index) {
+                final location = _itinerary[index];
+                return ListTile(
+                  title: Text(location.name!),
+                  subtitle: Text(location.description!),
+                  trailing: location.visited
+                      ? Icon(Icons.check, color: Colors.green)
+                      : IconButton(
+                    icon: Icon(Icons.check_box_outline_blank),
+                    onPressed: () async {
+                      await _itineraryController.markLocationAsVisited(widget.tripRoomId, location.id);
+                      _loadItinerary();
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
+
+
+
+
+
+
+
+
+
+
 
 //////////////////////////////////////////////////////////////////////////
 // List of trip rooms
@@ -229,7 +598,7 @@ class _TripRoomListViewState extends State<TripRoomListView> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => TripRoomView(tripRoomIds: [tripRoom.id]),
+                            builder: (context) => TripRoomView(tripRoomId: tripRoom.id, /*itinerary: [],*/),
                           ),
                         );
                       },
@@ -406,120 +775,6 @@ class _MainPageState extends State<MainPage> {
 
 
 // CREATE ROOM!!!!!!
-/*class CreateTripRoomPage extends StatefulWidget {
-  @override
-  _CreateTripRoomPageState createState() => _CreateTripRoomPageState();
-}
-
-class _CreateTripRoomPageState extends State<CreateTripRoomPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  File? _imageFile;
-  final ImagePicker _picker = ImagePicker();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool _isLoading = false;
-
-  Future<void> _createTripRoom() async {
-    if (!_formKey.currentState!.validate() || _imageFile == null) {
-      return;
-    }
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      User? user = _auth.currentUser;
-      if (user != null) {
-        Uint8List imageBytes = await _imageFile!.readAsBytes();
-        String imageUrl = await TripRoomController.uploadImage(imageBytes);
-        await TripRoomController.createTripRoom(
-          user.uid,
-          _nameController.text,
-          imageUrl,
-        );
-        Navigator.pop(context, true); // Pass back true indicating success
-      } else {
-        throw Exception('User not logged in');
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating trip room: $e')),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-
-
-  Future<void> _pickImage(ImageSource source) async {
-    final pickedFile = await _picker.pickImage(source: source);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path); // Ensure this is the File from 'dart:io'
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Create Trip Room'),
-        backgroundColor: Color(0xFF7A9E9F),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: <Widget>[
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(labelText: 'Name'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 20),
-              _imageFile == null
-                  ? Text('No image selected.')
-                  : Image.file(_imageFile!),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.camera_alt),
-                    onPressed: () => _pickImage(ImageSource.camera),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.photo_library),
-                    onPressed: () => _pickImage(ImageSource.gallery),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-              _isLoading
-                  ? CircularProgressIndicator()
-                  : ElevatedButton(
-                onPressed: _createTripRoom,
-                child: Text('Create Room'),
-                style: ElevatedButton.styleFrom(
-                  primary: Color(0xFF7A9E9F), // Match the color of other buttons
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}*/
 
 class CreateTripRoomPage extends StatefulWidget {
   final VoidCallback? onRoomCreated; // Callback function

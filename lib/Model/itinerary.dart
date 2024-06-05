@@ -10,6 +10,7 @@ class Location {
   String? operatingHour;
   String? price;
   String? type;
+  bool visited;
 
   Location({
     required this.id,
@@ -20,6 +21,7 @@ class Location {
     this.operatingHour,
     this.price,
     this.type,
+    this.visited = false,
   });
 
   factory Location.fromMap(String id, Map<String, dynamic> map) {
@@ -32,11 +34,25 @@ class Location {
       operatingHour: map['Operating_hour'],
       price: map['Price'],
       type: map['Type'],
+      visited: map['Visited'] ?? false,
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'Description': description,
+      'Latitude': latitude,
+      'Longitude': longitude,
+      'Name': name,
+      'Operating_hour': operatingHour,
+      'Price': price,
+      'Type': type,
+      'Visited': visited,
+    };
   }
 }
 
-
+// FILTERED LOCATION MODEL //
 class LocationFilter {
   final String id;
   final String description;
@@ -80,4 +96,43 @@ class LocationFilter {
     );
   }
 }
+
+//  ITINERARY MODEL  //
+class Itinerary {
+  String id;
+  String tripRoomId;
+  List<Location> locations;
+
+  Itinerary({
+    required this.id,
+    required this.tripRoomId,
+    required this.locations,
+  });
+
+  factory Itinerary.fromMap(String id, Map<String, dynamic>? map) {
+    if (map == null || map['itinerary'] == null) {
+      // Handle the case where map or 'locations' is null
+      return Itinerary(
+        id: id,
+        tripRoomId: '',
+        locations: [], // Return an empty list
+      );
+    }
+
+    var locationsFromMap = (map['itinerary'] as List<dynamic>)
+        .map((item) => Location.fromMap(id, item as Map<String, dynamic>))
+        .toList();
+
+    return Itinerary(
+      id: id,
+      tripRoomId: map['tripRoomId'] ?? '', // Use default value if tripRoomId is null
+      locations: locationsFromMap,
+    );
+  }
+}
+
+
+
+
+
 

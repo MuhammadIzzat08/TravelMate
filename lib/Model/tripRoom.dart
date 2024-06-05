@@ -1,34 +1,3 @@
-/*
-// models/trip_room.dart
-
-class TripRoom {
-  final String id;
-  final String name;
-  final String profilePicture;
-  final List<String> members;
-
-  TripRoom({required this.id, required this.name, required this.profilePicture, required this.members});
-
-  factory TripRoom.fromMap(Map<String, dynamic> data, String id) {
-    return TripRoom(
-      id: id,
-      name: data['name'],
-      profilePicture: data['profilePicture'],
-      members: List<String>.from(data['members']),
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'profilePicture': profilePicture,
-      'members': members,
-    };
-  }
-}
-*/
-
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TripRoom {
@@ -51,6 +20,14 @@ class TripRoom {
       profilePicture: map['profilePicture'],
       CreatedDate:(map['CreatedDate'] as Timestamp).toDate(),
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'profilePicture': profilePicture,
+      'CreatedDate': CreatedDate,
+    };
   }
 }
 

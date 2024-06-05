@@ -1,6 +1,9 @@
 
 
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:travelmate/Controller/itinerary.dart';
 import 'package:travelmate/Model/wishlist.dart';
 import 'package:travelmate/Model/itinerary.dart';
 
@@ -48,7 +51,7 @@ class WishlistController {
         }
       }).toList());
 
-      // Filter out any null values
+      /*// Filter out any null values
       final validLocationDetails = locationDetails.where((details) => details != null).toList();
 
       // Debugging print statement
@@ -57,6 +60,57 @@ class WishlistController {
       return validLocationDetails.cast<Location>();
     } catch (e) {
       print('Error fetching wishlist items: $e');
+      throw e;
+    }*/
+      return locationDetails.where((details) => details != null).cast<Location>().toList();
+    } catch (e) {
+      print('Error fetching wishlist items: $e');
+      throw e;
+    }
+  }
+
+  Future<bool> checkLocationExistsInWishlist(WishlistItem wishlistItem) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('wishlist')
+          .where('tripRoomId', isEqualTo: wishlistItem.tripRoomId)
+          .where('locationId', isEqualTo: wishlistItem.locationId)
+          .get();
+
+      return querySnapshot.docs.isNotEmpty;
+    } catch (e) {
+      // Handle error
+      print('Error checking location in wishlist: $e');
+      return false; // Return false in case of error
+    }
+  }
+
+  Future<void> deleteFromWishlist(String tripRoomId, String locationId) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('wishlist')
+          .where('tripRoomId', isEqualTo: tripRoomId)
+          .where('locationId', isEqualTo: locationId)
+          .get();
+
+      for (var doc in querySnapshot.docs) {
+        await _firestore.collection('wishlist').doc(doc.id).delete();
+      }
+    } catch (e) {
+      print('Error deleting from wishlist: $e');
+      throw e;
+    }
+  }
+
+  Future<void> generateAndSaveItinerary(String tripRoomId) async {
+    try {
+      final wishlistItems = await getWishlistItems(tripRoomId);
+      final itineraryController = ItineraryController();
+      final itinerary = await itineraryController.generateItinerary(tripRoomId, wishlistItems);
+      await itineraryController.saveItinerary(tripRoomId, itinerary);
+      await itineraryController.updateItineraryWithGeofencing(tripRoomId);
+    } catch (e) {
+      print('Error generating and saving itinerary: $e');
       throw e;
     }
   }

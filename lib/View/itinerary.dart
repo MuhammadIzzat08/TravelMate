@@ -196,8 +196,10 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
       purpose: selectedPurposes.isNotEmpty ? selectedPurposes : null,
       accessability: selectedAccessibilities.isNotEmpty ? selectedAccessibilities : null,
     );
+
     setState(() {
       filteredLocations = filteredResult.cast<LocationFilter>(); //kat siniiiiii
+
     });
   }
 
@@ -267,21 +269,46 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
     );
   }
 
-  void _addToWishlist() {
+  void _addToWishlist() async {
     final wishlistItem = WishlistItem(
       tripRoomId: widget.tripRoomId, // Use the passed trip room ID
       locationId: widget.location.id,
     );
-    _wishlistController.addToWishlist(wishlistItem).then((_) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Added to Wishlist'),
-      ));
-    }).catchError((error) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Failed to add to Wishlist: $error'),
-      ));
-    });
+
+    // Check if the location already exists in the wishlist
+    final existsInWishlist = await _wishlistController.checkLocationExistsInWishlist(wishlistItem);
+
+    if (existsInWishlist) {
+      // Show a popup message if the location already exists in the wishlist
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Location Already in Wishlist'),
+          content: Text('The location already exists in the wishlist. Please choose another location.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Add the location to the wishlist if it doesn't exist
+      _wishlistController.addToWishlist(wishlistItem).then((_) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Added to Wishlist'),
+        ));
+      }).catchError((error) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to add to Wishlist: $error'),
+        ));
+      });
+    }
   }
+
 }
 
 
