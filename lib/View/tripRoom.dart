@@ -390,9 +390,7 @@ class _TripRoomViewState extends State<TripRoomView> {
 class TripRoomView extends StatefulWidget {
   final String tripRoomId;
 
-  TripRoomView({required this.tripRoomId}) {
-    print("TripRoomView constructor called with tripRoomId: $tripRoomId");
-  }
+  TripRoomView({required this.tripRoomId});
 
   @override
   _TripRoomViewState createState() => _TripRoomViewState();
@@ -408,40 +406,28 @@ class _TripRoomViewState extends State<TripRoomView> {
   void initState() {
     super.initState();
     _getCurrentLocation();
-    _loadItinerary();
+    _generateAndLoadItinerary();
   }
 
   void _getCurrentLocation() async {
     try {
-      print("Attempting to get current location...");
-      Position position = await _itineraryController.determinePosition().timeout(Duration(seconds: 10));
-      print("Current location obtained: $position");
-      if (mounted) {
-        setState(() {
-          _currentPosition = position;
-        });
-      }
+      Position position = await _itineraryController.determinePosition();
+      setState(() {
+        _currentPosition = position;
+      });
     } catch (e) {
       print("Error getting current location: $e");
-      if (e is TimeoutException) {
-        // Handle timeout specifically
-        print("Location request timed out");
-      }
     }
   }
 
-  void _loadItinerary() async {
+  void _generateAndLoadItinerary() async {
     try {
-      print("Loading itinerary for tripRoomId: ${widget.tripRoomId}");
-      List<Location> itinerary = await _itineraryController.getItinerary(widget.tripRoomId);
-      if (mounted) {
-        setState(() {
-          _itinerary = itinerary;
-        });
-      }
-      print("Itinerary loaded: $itinerary");
+      List<Location> itinerary = await _itineraryController.generateItinerary(widget.tripRoomId, );
+      setState(() {
+        _itinerary = itinerary;
+      });
     } catch (e) {
-      print("Error loading itinerary: $e");
+      print("Error generating itinerary: $e");
     }
   }
 
@@ -470,6 +456,19 @@ class _TripRoomViewState extends State<TripRoomView> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Trip Room"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.list),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => WishlistScreen(tripRoomId: widget.tripRoomId),
+                ),
+              ).then((_) => _generateAndLoadItinerary());
+            },
+          ),
+        ],
       ),
       body: _currentPosition == null
           ? Center(child: CircularProgressIndicator())
@@ -491,15 +490,15 @@ class _TripRoomViewState extends State<TripRoomView> {
               itemBuilder: (context, index) {
                 final location = _itinerary[index];
                 return ListTile(
-                  title: Text(location.name!),
-                  subtitle: Text(location.description!),
+                  title: Text(location.name ?? 'Unknown'),
+                  subtitle: Text(location.description ?? 'No description'),
                   trailing: location.visited
                       ? Icon(Icons.check, color: Colors.green)
                       : IconButton(
                     icon: Icon(Icons.check_box_outline_blank),
                     onPressed: () async {
                       await _itineraryController.markLocationAsVisited(widget.tripRoomId, location.id);
-                      _loadItinerary();
+                      _generateAndLoadItinerary();
                     },
                   ),
                 );
@@ -511,6 +510,7 @@ class _TripRoomViewState extends State<TripRoomView> {
     );
   }
 }
+
 
 
 

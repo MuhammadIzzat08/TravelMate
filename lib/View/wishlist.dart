@@ -99,6 +99,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
 }
 */
 
+/*
 class WishlistScreen extends StatefulWidget {
   final String tripRoomId;
 
@@ -126,7 +127,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => TripRoomView(tripRoomId: widget.tripRoomId,),
+          builder: (context) => TripRoomView(tripRoomId: widget.tripRoomId),
         ),
       );
     } catch (e) {
@@ -196,6 +197,74 @@ class _WishlistScreenState extends State<WishlistScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _generateItinerary,
         child: Icon(Icons.add),
+      ),
+    );
+  }
+}
+*/
+
+class WishlistScreen extends StatefulWidget {
+  final String tripRoomId;
+
+  const WishlistScreen({Key? key, required this.tripRoomId}) : super(key: key);
+
+  @override
+  _WishlistScreenState createState() => _WishlistScreenState();
+}
+
+class _WishlistScreenState extends State<WishlistScreen> {
+  final WishlistController _wishlistController = WishlistController();
+  final ItineraryController _itineraryController = ItineraryController();
+  late Future<List<Location>> _wishlistItemsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _wishlistItemsFuture = _wishlistController.getWishlistItems(widget.tripRoomId);
+  }
+
+  void _markLocationAsVisited(String locationId) async {
+    await _itineraryController.markLocationAsVisited(widget.tripRoomId, locationId);
+    setState(() {
+      _wishlistItemsFuture = _wishlistController.getWishlistItems(widget.tripRoomId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Wishlist'),
+      ),
+      body: FutureBuilder<List<Location>>(
+        future: _wishlistItemsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('No wishlist items found'));
+          } else {
+            final wishlistItems = snapshot.data!;
+            return ListView.builder(
+              itemCount: wishlistItems.length,
+              itemBuilder: (context, index) {
+                final item = wishlistItems[index];
+                return ListTile(
+                  title: Text(item.name ?? 'Unknown'),
+                  subtitle: Text(item.description ?? 'No description'),
+                  trailing: item.visited
+                      ? Icon(Icons.check, color: Colors.green)
+                      : IconButton(
+                    icon: Icon(Icons.check_box_outline_blank),
+                    onPressed: () => _markLocationAsVisited(item.id),
+                  ),
+                );
+              },
+            );
+          }
+        },
       ),
     );
   }
