@@ -198,7 +198,8 @@ class ItineraryController {
     try {
       final locationsRef = _firestore.collection('locations');
       final querySnapshot = await locationsRef.get();
-      final locations = querySnapshot.docs.map((doc) => Location.fromMap(doc.id, doc.data())).toList();
+      final locations = querySnapshot.docs.map((doc) => Location.fromMap
+        (doc.id, doc.data())).toList();
       return locations;
     } catch (e) {
       // Handle error
@@ -237,7 +238,8 @@ class ItineraryController {
     final double dLat = _degreesToRadians(lat2 - lat1);
     final double dLon = _degreesToRadians(lon2 - lon1);
     final double a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(_degreesToRadians(lat1)) * cos(_degreesToRadians(lat2)) * sin(dLon / 2) * sin(dLon / 2);
+        cos(_degreesToRadians(lat1)) * cos(_degreesToRadians(lat2)) *
+            sin(dLon / 2) * sin(dLon / 2);
     final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return R * c; // Distance in km
   }
@@ -248,8 +250,10 @@ class ItineraryController {
 
   void sortLocationsByDistance(List<Location> locations, Position startLocation) {
     locations.sort((a, b) {
-      final double distanceA = _calculateDistance(startLocation.latitude, startLocation.longitude, a.latitude!, a.longitude!);
-      final double distanceB = _calculateDistance(startLocation.latitude, startLocation.longitude, b.latitude!, b.longitude!);
+      final double distanceA = _calculateDistance(startLocation.latitude,
+          startLocation.longitude, a.latitude!, a.longitude!);
+      final double distanceB = _calculateDistance(startLocation.latitude,
+          startLocation.longitude, b.latitude!, b.longitude!);
       return distanceA.compareTo(distanceB);
     });
   }

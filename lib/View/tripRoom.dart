@@ -422,7 +422,7 @@ class _TripRoomViewState extends State<TripRoomView> {
 
   void _generateAndLoadItinerary() async {
     try {
-      List<Location> itinerary = await _itineraryController.generateItinerary(widget.tripRoomId, );
+      List<Location> itinerary = await _itineraryController.generateItinerary(widget.tripRoomId);
       setState(() {
         _itinerary = itinerary;
       });
@@ -507,10 +507,20 @@ class _TripRoomViewState extends State<TripRoomView> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FilteredItineraryScreen(tripRoomId: widget.tripRoomId),
+            ),
+          );
+        },
+        child: Icon(Icons.filter_list),
+      ),
     );
   }
 }
-
 
 
 
@@ -598,7 +608,7 @@ class _TripRoomListViewState extends State<TripRoomListView> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => TripRoomView(tripRoomId: tripRoom.id, /*itinerary: [],*/),
+                            builder: (context) => MainPage2(tripRoomId: tripRoom.id, /*itinerary: [],*/),
                           ),
                         );
                       },
@@ -638,7 +648,7 @@ class _TripRoomListViewState extends State<TripRoomListView> {
   }
 }
 
-
+//------------------------SEARCH TRIP ROOM--------------------------------------
 class TripRoomSearchDelegate extends SearchDelegate {
   final Function(String) searchFunction;
 
@@ -679,6 +689,9 @@ class TripRoomSearchDelegate extends SearchDelegate {
   }
 }
 
+
+
+//---------------------------REAL MAIN PAGE-------------------------------------
 class MainPage extends StatefulWidget {
   @override
   _MainPageState createState() => _MainPageState();
@@ -753,28 +766,71 @@ class _MainPageState extends State<MainPage> {
         tooltip: 'Create Room',
       )
           : null,
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Trip',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Color(0xFF7A9E9F),
-        onTap: _onItemTapped,
-      ),
+
     );
   }
 }
 
 
 
-// CREATE ROOM!!!!!!
+//------------------------------MAIN PAGE 2-------------------------------------
+class MainPage2 extends StatefulWidget {
+  final String tripRoomId;
+
+  const MainPage2({required this.tripRoomId});
+
+  @override
+  _MainPage2State createState() => _MainPage2State();
+}
+
+class _MainPage2State extends State<MainPage2> {
+  int _currentIndex = 0;
+
+  final List<Widget> _pages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _pages.addAll([
+      TripRoomView(tripRoomId: widget.tripRoomId),
+      ExpenseView(tripRoomId: widget.tripRoomId),
+      TripRoomDetailsPage(tripRoomId: widget.tripRoomId), // Settings doesn't need tripRoomId but you can provide if needed
+    ]);
+  }
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _pages[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: _onTabTapped,
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Trip',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Expenses',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+//----------------------CREATE TRIP ROOM!!!!!!----------------------------------
 
 class CreateTripRoomPage extends StatefulWidget {
   final VoidCallback? onRoomCreated; // Callback function
@@ -893,6 +949,9 @@ class _CreateTripRoomPageState extends State<CreateTripRoomPage> {
   }
 }
 
+
+
+// -----------------------------TRIP ROOM DETAILS ------------------------------
 class TripRoomDetailsPage extends StatefulWidget {
   final String tripRoomId;
 
