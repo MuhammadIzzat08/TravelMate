@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:travelmate/Controller/expense.dart';
 import 'package:travelmate/authservice.dart'; // Import your authentication service
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -22,372 +23,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 
-/*class TripRoomView extends StatefulWidget {
-  final List<String> tripRoomIds;
 
-  TripRoomView({required this.tripRoomIds});
-
-  @override
-  _TripRoomViewState createState() => _TripRoomViewState();
-}
-
-class _TripRoomViewState extends State<TripRoomView> {
-  late TripRoom tripRoom;
-  bool isLoading = true;
-  String? errorMessage;
-  List<Location> itinerary = [];
-  late String loggedInUserId; // Declare a variable to store the logged-in user's ID
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchLoggedInUserId(); // Fetch the logged-in user's ID
-    _fetchTripRoom();
-    _fetchItinerary();
-  }
-
-  Future<void> _fetchLoggedInUserId() async {
-    try {
-      loggedInUserId = await AuthService.getLoggedInUserId(); // Fetch the logged-in user's ID
-    } catch (e) {
-      print('Error fetching logged-in user ID: $e');
-    }
-  }
-
-  Future<void> _fetchTripRoom() async {
-    try {
-      tripRoom = await TripRoomController.getTripRoom(widget.tripRoomIds.first);
-      setState(() {
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-        errorMessage = e.toString();
-      });
-      print('Error fetching trip room: $e');
-    }
-  }
-
-  Future<void> _fetchItinerary() async {
-    try {
-      final controller = TripRoomController(); // Create an instance of TripRoomController
-      final itineraryData = await controller.getItinerary(widget.tripRoomIds.first);
-      setState(() {
-        itinerary = (itineraryData?.locations ?? []); // Access locations from itineraryData, or use empty list if null
-      });
-    } catch (e) {
-      print('Error fetching itinerary: $e'); // Debug print
-    }
-  }
-
-
-  @override
-  Widget build(BuildContext context) {
-    if (isLoading) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Trip Room'),
-        ),
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (errorMessage != null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Trip Room'),
-        ),
-        body: Center(child: Text('Error: $errorMessage')),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(tripRoom.name),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.favorite),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => WishlistScreen(tripRoomId:  widget.tripRoomIds.first),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: itinerary.length,
-              itemBuilder: (context, index) {
-                final location = itinerary[index];
-                return ListTile(
-                  title: Text(location.name ?? 'Unknown Location'),
-                  subtitle: Text(location.description ?? 'No description'),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => FilteredItineraryScreen(tripRoomId: widget.tripRoomIds.first,),
-            ),
-          );
-        },
-        child: Icon(Icons.add),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Itinerary'),
-          BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Expense'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-        ],
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ItineraryScreen(),
-                ),
-              );
-              break;
-            case 1:
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ExpenseList(tripRoomId: widget.tripRoomIds.first, loggedInUserId: loggedInUserId,),
-                ),
-              );
-              break;
-            case 2:
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => TripRoomDetailsPage(tripRoomId:  widget.tripRoomIds.first),
-                ),
-              );
-              break;
-          }
-        },
-      ),
-    );
-  }
-}*/
-
-/*class TripRoomView extends StatefulWidget {
-  final List<String> tripRoomIds;
-
-  TripRoomView({super.key, required this.tripRoomIds});
-
-  @override
-  _TripRoomViewState createState() => _TripRoomViewState();
-}
-
-class _TripRoomViewState extends State<TripRoomView> {
-  late TripRoom tripRoom;
-  bool isLoading = true;
-  String? errorMessage;
-  List<Location> itinerary = [];
-  late String loggedInUserId;
-  late GoogleMapController mapController;
-  Position? userPosition;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchLoggedInUserId();
-    _fetchTripRoom();
-    _fetchItinerary();
-    _determinePosition();
-  }
-
-  Future<void> _fetchLoggedInUserId() async {
-    try {
-      loggedInUserId = await AuthService.getLoggedInUserId();
-    } catch (e) {
-      print('Error fetching logged-in user ID: $e');
-    }
-  }
-
-  Future<void> _fetchTripRoom() async {
-    try {
-      tripRoom = await TripRoomController.getTripRoom(widget.tripRoomIds.first);
-      setState(() {
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-        errorMessage = e.toString();
-      });
-      print('Error fetching trip room: $e');
-    }
-  }
-
-  Future<void> _fetchItinerary() async {
-    try {
-      final controller = ItineraryController();
-      final itineraryData = await controller.getItinerary(widget.tripRoomIds.first);
-      setState(() {
-        itinerary = itineraryData;
-      });
-    } catch (e) {
-      print('Error fetching itinerary: $e');
-    }
-  }
-
-  Future<void> _determinePosition() async {
-    final controller = ItineraryController();
-    try {
-      final position = await controller.determinePosition();
-      setState(() {
-        userPosition = position;
-      });
-    } catch (e) {
-      print('Error fetching user location: $e');
-    }
-  }
-
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (isLoading) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Trip Room'),
-        ),
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (errorMessage != null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Trip Room'),
-        ),
-        body: Center(child: Text('Error: $errorMessage')),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(tripRoom.name),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.favorite),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => WishlistScreen(tripRoomId: widget.tripRoomIds.first),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: CameraPosition(
-                target: userPosition != null
-                    ? LatLng(userPosition!.latitude, userPosition!.longitude)
-                    : LatLng(0, 0),
-                zoom: 14.0,
-              ),
-              markers: itinerary.map((location) {
-                return Marker(
-                  markerId: MarkerId(location.id),
-                  position: LatLng(location.latitude!, location.longitude!),
-                  infoWindow: InfoWindow(
-                    title: location.name,
-                    snippet: location.description,
-                  ),
-                );
-              }).toSet(),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: itinerary.length,
-              itemBuilder: (context, index) {
-                final location = itinerary[index];
-                return ListTile(
-                  title: Text(location.name ?? 'Unknown Location'),
-                  subtitle: Text(location.description ?? 'No description'),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => FilteredItineraryScreen(tripRoomId: widget.tripRoomIds.first),
-            ),
-          );
-        },
-        child: Icon(Icons.add),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Itinerary'),
-          BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Expense'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-        ],
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ItineraryScreen(),
-                ),
-              );
-              break;
-            case 1:
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ExpenseList(tripRoomId: widget.tripRoomIds.first, loggedInUserId: loggedInUserId),
-                ),
-              );
-              break;
-            case 2:
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => TripRoomDetailsPage(tripRoomId: widget.tripRoomIds.first),
-                ),
-              );
-              break;
-          }
-        },
-      ),
-    );
-  }
-}*/
-
-
+//-------------------------display trip room main page--------------------------
 class TripRoomView extends StatefulWidget {
   final String tripRoomId;
 
@@ -570,7 +207,7 @@ class _TripRoomViewState extends State<TripRoomView> {
             ),
           );
         },
-        child: Icon(Icons.filter_list),
+        child: Icon(Icons.add_location),
         backgroundColor: Color(0xFF7A9E9F),
       ),
     );
@@ -1025,7 +662,7 @@ class _MainPageState extends State<MainPage> {
 }*/
 
 //------------------------------MAIN PAGE 2-------------------------------------
-class MainPage2 extends StatefulWidget {
+/*class MainPage2 extends StatefulWidget {
   final String tripRoomId;
 
   const MainPage2({required this.tripRoomId});
@@ -1044,7 +681,7 @@ class _MainPage2State extends State<MainPage2> {
     super.initState();
     _pages.addAll([
       TripRoomView(tripRoomId: widget.tripRoomId),
-      ExpenseView(tripRoomId: widget.tripRoomId),
+      UnifiedExpenseView(tripRoomId: widget.tripRoomId, loggedInUserId: loggedInUserId),
       TripRoomDetailsPage(tripRoomId: widget.tripRoomId), // Settings doesn't need tripRoomId but you can provide if needed
     ]);
   }
@@ -1079,6 +716,82 @@ class _MainPage2State extends State<MainPage2> {
         ],
       ),
     );
+  }
+}*/
+
+class MainPage2 extends StatefulWidget {
+  final String tripRoomId;
+
+  const MainPage2({required this.tripRoomId});
+
+  @override
+  _MainPage2State createState() => _MainPage2State();
+}
+
+class _MainPage2State extends State<MainPage2> {
+  int _currentIndex = 0;
+  late String _loggedInUserId;
+  final ExpenseController _expenseController = ExpenseController(); // Create an instance of ExpenseController
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLoggedInUserId(); // Fetch the logged-in user ID when the page initializes
+  }
+
+  Future<void> _fetchLoggedInUserId() async {
+    // Fetch the logged-in user ID using your ExpenseController
+    _loggedInUserId = await _expenseController.getLoggedInUserId();
+    setState(() {}); // Trigger a rebuild after fetching the user ID
+  }
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _getBody(), // Use a function to determine which page to display
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: _onTabTapped,
+        selectedItemColor: Color(0xFF7A9E9F),
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Itinerary',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Expenses',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _getBody() {
+    if (_loggedInUserId.isEmpty) {
+      return Center(child: CircularProgressIndicator()); // Show loading indicator while fetching user ID
+    } else {
+      switch (_currentIndex) {
+        case 0:
+          return TripRoomView(tripRoomId: widget.tripRoomId);
+        case 1:
+          return UnifiedExpenseView(tripRoomId: widget.tripRoomId, loggedInUserId: _loggedInUserId); // Pass the logged-in user ID to UnifiedExpenseView
+        case 2:
+          return TripRoomDetailsPage(tripRoomId: widget.tripRoomId); // Settings page
+        default:
+          return Container();
+      }
+    }
   }
 }
 
@@ -1204,6 +917,7 @@ class _CreateTripRoomPageState extends State<CreateTripRoomPage> {
 
 
 // -----------------------------TRIP ROOM DETAILS ------------------------------
+
 class TripRoomDetailsPage extends StatefulWidget {
   final String tripRoomId;
 
@@ -1217,15 +931,15 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
   final _emailController = TextEditingController();
   bool _isLoading = false;
   TripRoom? _tripRoom;
+  List<String> _memberNames = [];
 
   @override
   void initState() {
     super.initState();
-    print('TripRoomDetailsPage initialized with tripRoomId: ${widget.tripRoomId}');
     _loadTripRoomDetails();
+    _loadMembersNames();
   }
 
-  // Function to load trip room details
   Future<void> _loadTripRoomDetails() async {
     setState(() {
       _isLoading = true;
@@ -1249,7 +963,19 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
     }
   }
 
-  // Function to add a member to the trip room
+  Future<void> _loadMembersNames() async {
+    try {
+      List<String> memberNames = await TripRoomController.getMembersNames(widget.tripRoomId);
+      setState(() {
+        _memberNames = memberNames;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading member names: $e')),
+      );
+    }
+  }
+
   Future<void> _addMember() async {
     if (_tripRoom == null) {
       return;
@@ -1266,6 +992,7 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Member added successfully')),
         );
+        _loadMembersNames(); // Reload member names after adding a member
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('User not found')),
@@ -1286,8 +1013,16 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Trip Room Details'),
-        backgroundColor: Color(0xFF7A9E9F),
+        title: Text(
+          'Trip Room Details',
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 23,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -1298,37 +1033,63 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
             : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // Display trip room details
             Text(
-              'Trip Room ID: ${_tripRoom!.id}',
+              'Trip Room Name:',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
             Text(
-              'Trip Room Name: ${_tripRoom!.name}',
+              _tripRoom!.name,
               style: TextStyle(fontSize: 18),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: 16),
             Text(
-              'Trip Room Profile Picture: ${_tripRoom!.profilePicture}',
-              style: TextStyle(fontSize: 18),
-            ),
-            // Add more details as needed...
-            SizedBox(height: 20),
-            Text(
-              'Add Member:',
+              'Members:',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
+            SizedBox(height: 8),
+            _memberNames.isEmpty
+                ? Text('No members found')
+                : Column(
+              children: _memberNames
+                  .map(
+                    (memberName) => ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Color(0xFF7A9E9F),
+                    child: Icon(
+                      Icons.person,
+                      color: Colors.white,
+                    ),
+                  ),
+                  title: Text(memberName),
+                ),
+              )
+                  .toList(),
+            ),
+            SizedBox(height: 16),
             TextFormField(
               controller: _emailController,
-              decoration: InputDecoration(labelText: 'Member Email'),
+              decoration: InputDecoration(
+                labelText: 'Add Member by Email',
+                prefixIcon: Icon(Icons.email),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _addMember,
-              child: Text('Add Member'),
-              style: ElevatedButton.styleFrom(
-                primary: Color(0xFF7A9E9F),
+            SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _addMember,
+                child: Text('Add Member'),
+                style: ElevatedButton.styleFrom(
+                  primary: Color(0xFF7A9E9F),
+                  padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
               ),
             ),
           ],

@@ -43,6 +43,7 @@ class ExpenseController with ChangeNotifier {
 }*/
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../Model/expense.dart';
 
 /*
@@ -147,4 +148,19 @@ class ExpenseController {
       return 'Unknown User';
     }
   }
+
+  // Method to fetch the logged-in user's ID
+  Future<String> getLoggedInUserId() async {
+    // Get the current user from Firebase Authentication
+    firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // If user is authenticated, return their user ID
+      return user.uid;
+    } else {
+      // If user is not authenticated, return an empty string or handle accordingly
+      return '';
+    }
+  }
+
+
 }

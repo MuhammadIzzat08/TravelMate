@@ -158,6 +158,25 @@ class TripRoomController {
     }
   }
 
+  static Future<List<String>> getMembersNames(String tripRoomId) async {
+    final CollectionReference tripRoomMembersCollection = FirebaseFirestore.instance.collection('UserTripRoom');
+    final CollectionReference usersCollection = FirebaseFirestore.instance.collection('User');
+
+    final querySnapshot = await tripRoomMembersCollection.where('TripRoomId', isEqualTo: tripRoomId).get();
+    final userIds = querySnapshot.docs.map((doc) => doc['UserId'] as String).toList();
+
+    final memberNames = <String>[];
+    for (final userId in userIds) {
+      final doc = await usersCollection.doc(userId).get();
+      if (doc.exists) {
+        final userName = doc['Name'] as String;
+        memberNames.add(userName);
+      }
+    }
+
+    return memberNames;
+  }
+
 
 }
 
