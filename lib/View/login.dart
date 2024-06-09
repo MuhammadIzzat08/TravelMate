@@ -114,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => MainPage(),//TripRoomListView(),//TripRoomView(tripRoomIds: tripRoomIds,),
+            builder: (context) => TripRoomListView()//MainPage(),//TripRoomListView(),//TripRoomView(tripRoomIds: tripRoomIds,),
           ),
         );
       } else {

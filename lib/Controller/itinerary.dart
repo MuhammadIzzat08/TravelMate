@@ -194,6 +194,7 @@ import 'package:travelmate/Model/itinerary.dart';
 class ItineraryController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  //------------------------Get the location------------------------------------
   Future<List<Location>> getLocations() async {
     try {
       final locationsRef = _firestore.collection('locations');
@@ -208,7 +209,7 @@ class ItineraryController {
     }
   }
 
-
+// -------------------Determine the user current position----------------------
   Future<Position> determinePosition() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -233,6 +234,7 @@ class ItineraryController {
     return await Geolocator.getCurrentPosition();
   }
 
+  //---calculate the distance between location and user current location--------
   double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
     const double R = 6371; // Radius of the earth in km
     final double dLat = _degreesToRadians(lat2 - lat1);
@@ -248,6 +250,7 @@ class ItineraryController {
     return degrees * pi / 180;
   }
 
+//-Sort the Location that has been calculated from the nearest to the farthest--
   void sortLocationsByDistance(List<Location> locations, Position startLocation) {
     locations.sort((a, b) {
       final double distanceA = _calculateDistance(startLocation.latitude,
@@ -258,15 +261,20 @@ class ItineraryController {
     });
   }
 
+  //---------------------Get the locations in the wishlist----------------------
   Future<List<Location>> getWishlistItems(String tripRoomId) async {
     try {
+      // Query the wishlist collection with an additional condition
       final wishlistSnapshot = await _firestore
           .collection('wishlist')
           .where('tripRoomId', isEqualTo: tripRoomId)
+          .where('Visited', isEqualTo: false) // Only include items where Visited is false
           .get();
 
+      // Extract location IDs from the wishlist
       final locationIds = wishlistSnapshot.docs.map((doc) => doc['locationId']).toList();
 
+      // Fetch locations from the locations collection based on IDs
       final locations = await Future.wait(locationIds.map((id) async {
         final docSnapshot = await _firestore.collection('locations').doc(id).get();
         if (docSnapshot.exists) {
@@ -276,6 +284,7 @@ class ItineraryController {
         }
       }).toList());
 
+      // Filter out any null values from the results
       return locations.where((location) => location != null).cast<Location>().toList();
     } catch (e) {
       print('Error fetching wishlist items: $e');
@@ -283,6 +292,7 @@ class ItineraryController {
     }
   }
 
+  //--Generate itinerary by calculate and sort the locations based on distance--
   Future<List<Location>> generateItinerary(String tripRoomId) async {
     try {
       final userPosition = await determinePosition();
@@ -295,6 +305,8 @@ class ItineraryController {
     }
   }
 
+
+//----------------Mark the location as visited when tick the box----------------
   Future<void> markLocationAsVisited(String tripRoomId, String locationId) async {
     try {
       final querySnapshot = await _firestore

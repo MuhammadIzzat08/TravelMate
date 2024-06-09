@@ -50,6 +50,7 @@ dependencies:
   geocoding: ^2.0.5
   location: ^4.3.0
   geofence_service: ^5.0.0
+  google_fonts: ^4.0.4
 
 
 dev_dependencies:
@@ -73,6 +74,20 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/fonts/
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins/Poppins-Bold.ttf
+          weight: 700
+    - family: SedanSC
+      fonts:
+        - asset: assets/fonts/Sedan_SC/SedanSC-Regular.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   # assets:

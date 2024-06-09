@@ -12,7 +12,10 @@ class WishlistController {
 
   Future<void> addToWishlist(WishlistItem item) async {
     try {
-      await _firestore.collection('wishlist').add(item.toMap());
+      await _firestore.collection('wishlist').add({
+        ...item.toMap(),
+        'Visited': false, // Default Visited field set to false
+      });
     } catch (e) {
       print('Error adding to wishlist: $e');
       throw e;
@@ -36,8 +39,11 @@ class WishlistController {
       final locationDetails = await Future.wait(locationIds.map((id) async {
         final docSnapshot = await _firestore.collection('locations').doc(id).get();
         if (docSnapshot.exists) {
-          print('Location details for ID $id: ${docSnapshot.data()}');
-          return Location.fromMap(docSnapshot.id, docSnapshot.data()!);
+          final location = Location.fromMap(docSnapshot.id, docSnapshot.data()!);
+          // Adding 'Visited' status to the location if not already present
+          final wishlistDoc = querySnapshot.docs.firstWhere((doc) => doc['locationId'] == id);
+          location.visited = wishlistDoc['Visited'] ?? false;
+          return location;
         } else {
           print('Location with ID $id does not exist');
           return null;
@@ -68,18 +74,24 @@ class WishlistController {
     }
   }
 
-/*  Future<void> generateAndSaveItinerary(String tripRoomId) async {
+  Future<void> updateVisitedStatus(String tripRoomId, String locationId, bool visited) async {
     try {
-      final wishlistItems = await getWishlistItems(tripRoomId);
-      final itineraryController = ItineraryController();
-      final itinerary = await itineraryController.generateItinerary(tripRoomId, wishlistItems);
-      await itineraryController.saveItinerary(tripRoomId, itinerary);
-      await itineraryController.updateItineraryWithGeofencing(tripRoomId);
+      final querySnapshot = await _firestore
+          .collection('wishlist')
+          .where('tripRoomId', isEqualTo: tripRoomId)
+          .where('locationId', isEqualTo: locationId)
+          .get();
+
+      for (var doc in querySnapshot.docs) {
+        await _firestore.collection('wishlist').doc(doc.id).update({
+          'Visited': visited,
+        });
+      }
     } catch (e) {
-      print('Error generating and saving itinerary: $e');
+      print('Error updating visited status: $e');
       throw e;
     }
-  }*/
+  }
 
   Future<bool> checkLocationExistsInWishlist(WishlistItem wishlistItem) async {
     try {
@@ -91,9 +103,8 @@ class WishlistController {
 
       return querySnapshot.docs.isNotEmpty;
     } catch (e) {
-      // Handle error
       print('Error checking location in wishlist: $e');
-      return false; // Return false in case of error
+      return false;
     }
   }
 }

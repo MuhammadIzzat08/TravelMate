@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:travelmate/authservice.dart'; // Import your authentication service
 import 'package:firebase_auth/firebase_auth.dart';
@@ -397,6 +398,7 @@ class TripRoomView extends StatefulWidget {
 }
 
 class _TripRoomViewState extends State<TripRoomView> {
+  late TripRoom tripRoom;
   GoogleMapController? mapController;
   Position? _currentPosition;
   List<Location> _itinerary = [];
@@ -407,6 +409,22 @@ class _TripRoomViewState extends State<TripRoomView> {
     super.initState();
     _getCurrentLocation();
     _generateAndLoadItinerary();
+    _fetchTripRoom();
+  }
+
+  Future<void> _fetchTripRoom() async {
+    try {
+      tripRoom = await TripRoomController.getTripRoom(widget.tripRoomId);
+      setState(() {
+        //isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        //isLoading = false;
+        //errorMessage = e.toString();
+      });
+      print('Error fetching trip room: $e');
+    }
   }
 
   void _getCurrentLocation() async {
@@ -422,7 +440,8 @@ class _TripRoomViewState extends State<TripRoomView> {
 
   void _generateAndLoadItinerary() async {
     try {
-      List<Location> itinerary = await _itineraryController.generateItinerary(widget.tripRoomId);
+      List<Location> itinerary = await _itineraryController.generateItinerary(
+          widget.tripRoomId);
       setState(() {
         _itinerary = itinerary;
       });
@@ -455,54 +474,88 @@ class _TripRoomViewState extends State<TripRoomView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Trip Room"),
+        title: Text(
+          tripRoom.name,
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 25,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
         actions: [
           IconButton(
-            icon: Icon(Icons.list),
+            icon: Icon(Icons.favorite, color: Color(0xFF7A9E9F)),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => WishlistScreen(tripRoomId: widget.tripRoomId),
+                  builder: (context) =>
+                      WishlistScreen(tripRoomId: widget.tripRoomId),
                 ),
               ).then((_) => _generateAndLoadItinerary());
             },
           ),
         ],
       ),
-      body: _currentPosition == null
-          ? Center(child: CircularProgressIndicator())
-          : Column(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
+            flex: 3,
             child: GoogleMap(
               onMapCreated: _onMapCreated,
               initialCameraPosition: CameraPosition(
-                target: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                target: LatLng(
+                    _currentPosition!.latitude, _currentPosition!.longitude),
                 zoom: 12,
               ),
               markers: _createMarkers(),
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: _itinerary.length,
-              itemBuilder: (context, index) {
-                final location = _itinerary[index];
-                return ListTile(
-                  title: Text(location.name ?? 'Unknown'),
-                  subtitle: Text(location.description ?? 'No description'),
-                  trailing: location.visited
-                      ? Icon(Icons.check, color: Colors.green)
-                      : IconButton(
-                    icon: Icon(Icons.check_box_outline_blank),
-                    onPressed: () async {
-                      await _itineraryController.markLocationAsVisited(widget.tripRoomId, location.id);
-                      _generateAndLoadItinerary();
-                    },
+            flex: 2,
+            child: Container(
+              color: Colors.white,
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Itinerary',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF7A9E9F),
+                    ),
                   ),
-                );
-              },
+                  SizedBox(height: 8),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _itinerary.length,
+                      itemBuilder: (context, index) {
+                        final location = _itinerary[index];
+                        return ListTile(
+                          title: Text(location.name ?? 'Unknown'),
+                          subtitle: Text(
+                              location.description ?? 'No description'),
+                          trailing: location.visited
+                              ? Icon(Icons.check, color: Color(0xFF7A9E9F))
+                              : IconButton(
+                            icon: Icon(Icons.check_box_outline_blank),
+                            onPressed: () async {
+                              await _itineraryController.markLocationAsVisited(
+                                  widget.tripRoomId, location.id);
+                              _generateAndLoadItinerary();
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -512,30 +565,23 @@ class _TripRoomViewState extends State<TripRoomView> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => FilteredItineraryScreen(tripRoomId: widget.tripRoomId),
+              builder: (context) =>
+                  FilteredItineraryScreen(tripRoomId: widget.tripRoomId),
             ),
           );
         },
         child: Icon(Icons.filter_list),
+        backgroundColor: Color(0xFF7A9E9F),
       ),
     );
   }
 }
 
 
-
-
-
-
-
-
-
-
-
 //////////////////////////////////////////////////////////////////////////
 // List of trip rooms
 
-class TripRoomListView extends StatefulWidget {
+/*class TripRoomListView extends StatefulWidget {
   final Future<List<TripRoom>> tripRoomsFuture;
   final Future<void> Function(String searchTerm) searchTripRooms;
   final Future<void> Function() refreshTripRooms;
@@ -608,7 +654,7 @@ class _TripRoomListViewState extends State<TripRoomListView> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => MainPage2(tripRoomId: tripRoom.id, /*itinerary: [],*/),
+                            builder: (context) => MainPage2(tripRoomId: tripRoom.id, *//*itinerary: [],*//*),
                           ),
                         );
                       },
@@ -645,6 +691,187 @@ class _TripRoomListViewState extends State<TripRoomListView> {
         );
       },
     ) ?? '';
+  }
+}*/
+
+class TripRoomListView extends StatefulWidget {
+  @override
+  _TripRoomListViewState createState() => _TripRoomListViewState();
+}
+
+class _TripRoomListViewState extends State<TripRoomListView> {
+  int _selectedIndex = 0; // Default to the first page (Trip)
+  late Future<List<TripRoom>> _tripRoomsFuture;
+  final TripRoomController _tripRoomController = TripRoomController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _tripRoomsFuture = _fetchTripRooms();
+  }
+
+  Future<List<TripRoom>> _fetchTripRooms() async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      return await TripRoomController.getUserTripRooms(user.uid);
+    } else {
+      throw Exception('User not logged in');
+    }
+  }
+
+  Future<void> _searchTripRooms(String searchTerm) async {
+    setState(() {
+      _tripRoomsFuture = TripRoomController.searchTripRooms(searchTerm);
+    });
+  }
+
+  Future<void> _refreshTripRooms() async {
+    setState(() {
+      _tripRoomsFuture = _fetchTripRooms();
+    });
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  Future<String> _showSearchDialog(BuildContext context) async {
+    TextEditingController _searchController = TextEditingController();
+    return await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Search Trip Rooms'),
+          content: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(hintText: 'Enter search term'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(_searchController.text);
+              },
+              child: Text('Search'),
+            ),
+          ],
+        );
+      },
+    ) ?? '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    List<Widget> _pages = [
+      _buildTripRoomsPage(),
+      //SettingsPage(), // Your settings page
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'TravelMate',
+          style: GoogleFonts.sourceSerif4(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 35,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)), // Color for back button, etc.
+        elevation: 1, // Remove shadow if preferred
+        actions: [
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () async {
+              String searchTerm = await _showSearchDialog(context);
+              if (searchTerm.isNotEmpty) {
+                await _searchTripRooms(searchTerm);
+              }
+            },
+            iconSize: 30,
+          ),
+        ],
+      ),
+      body: _pages[_selectedIndex],
+      floatingActionButton: _selectedIndex == 0
+          ? FloatingActionButton(
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CreateTripRoomPage(
+                onRoomCreated: _refreshTripRooms, // Pass the refresh function
+              ),
+            ),
+          );
+        },
+        child: Icon(Icons.add),
+        backgroundColor: Color(0xFF7A9E9F), // Match the color of other buttons
+        tooltip: 'Create Room',
+      )
+          : null,
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Trip',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Color(0xFF7A9E9F), // Match the theme color
+        onTap: _onItemTapped,
+      ),
+    );
+  }
+
+  Widget _buildTripRoomsPage() {
+    return FutureBuilder<List<TripRoom>>(
+      future: _tripRoomsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('No trip rooms found'));
+        } else {
+          List<TripRoom> tripRooms = snapshot.data!;
+          return RefreshIndicator(
+            onRefresh: _refreshTripRooms,
+            child: ListView.builder(
+              itemCount: tripRooms.length,
+              itemBuilder: (context, index) {
+                TripRoom tripRoom = tripRooms[index];
+                return Card(
+                  child: ListTile(
+                    title: Text(tripRoom.name),
+                    trailing: Text(
+                      tripRoom.CreatedDate.toLocal().toString().split(' ')[0],
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MainPage2(tripRoomId: tripRoom.id, /*itinerary: [],*/),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          );
+        }
+      },
+    );
   }
 }
 
@@ -692,13 +919,13 @@ class TripRoomSearchDelegate extends SearchDelegate {
 
 
 //---------------------------REAL MAIN PAGE-------------------------------------
-class MainPage extends StatefulWidget {
+/*class MainPage extends StatefulWidget {
   @override
   _MainPageState createState() => _MainPageState();
 }
 
 class _MainPageState extends State<MainPage> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 0; // Default to the first page (Trip)
   late Future<List<TripRoom>> _tripRoomsFuture;
   final TripRoomController _tripRoomController = TripRoomController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -744,15 +971,27 @@ class _MainPageState extends State<MainPage> {
         searchTripRooms: _searchTripRooms,
         refreshTripRooms: _refreshTripRooms, // Pass the refresh function
       ),
-      UserProfilePage(),
+      //SettingsPage(), // Re-enable the SettingsPage
     ];
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'TravelMate',
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)), // Color for back button, etc.
+        elevation: 0, // Remove shadow if preferred
+      ),
       body: _pages[_selectedIndex],
       floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton(
         onPressed: () async {
-          bool? result = await Navigator.push(
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => CreateTripRoomPage(
@@ -766,12 +1005,24 @@ class _MainPageState extends State<MainPage> {
         tooltip: 'Create Room',
       )
           : null,
-
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Trip',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Color(0xFF7A9E9F), // Match the theme color
+        onTap: _onItemTapped,
+      ),
     );
   }
-}
-
-
+}*/
 
 //------------------------------MAIN PAGE 2-------------------------------------
 class MainPage2 extends StatefulWidget {
@@ -811,10 +1062,11 @@ class _MainPage2State extends State<MainPage2> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
+        selectedItemColor: Color(0xFF7A9E9F), // Change hover color here
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: 'Trip',
+            label: 'Itinerary',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.account_balance_wallet),

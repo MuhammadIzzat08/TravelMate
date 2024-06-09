@@ -11,6 +11,7 @@ class WishlistItem {
     return {
       'tripRoomId': tripRoomId,
       'locationId': locationId,
+      'Visited': false,
     };
   }
 

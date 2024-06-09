@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:travelmate/Controller/itinerary.dart';
 import 'package:travelmate/Controller/wishlist.dart';
 import 'package:travelmate/Model/itinerary.dart';
@@ -223,8 +224,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
     _wishlistItemsFuture = _wishlistController.getWishlistItems(widget.tripRoomId);
   }
 
-  void _markLocationAsVisited(String locationId) async {
-    await _itineraryController.markLocationAsVisited(widget.tripRoomId, locationId);
+  void _toggleVisitedStatus(String locationId, bool currentStatus) async {
+    await _wishlistController.updateVisitedStatus(widget.tripRoomId, locationId, !currentStatus);
     setState(() {
       _wishlistItemsFuture = _wishlistController.getWishlistItems(widget.tripRoomId);
     });
@@ -234,7 +235,16 @@ class _WishlistScreenState extends State<WishlistScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Wishlist'),
+        title: Text(
+          'Wishlist',
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
       ),
       body: FutureBuilder<List<Location>>(
         future: _wishlistItemsFuture,
@@ -254,11 +264,14 @@ class _WishlistScreenState extends State<WishlistScreen> {
                 return ListTile(
                   title: Text(item.name ?? 'Unknown'),
                   subtitle: Text(item.description ?? 'No description'),
-                  trailing: item.visited
-                      ? Icon(Icons.check, color: Colors.green)
-                      : IconButton(
-                    icon: Icon(Icons.check_box_outline_blank),
-                    onPressed: () => _markLocationAsVisited(item.id),
+                  trailing: IconButton(
+                    icon: Icon(
+                      item.visited
+                          ? Icons.check_box // Checked
+                          : Icons.check_box_outline_blank, // Unchecked
+                      color: item.visited ? Color(0xFF7A9E9F) : Colors.grey,
+                    ),
+                    onPressed: () => _toggleVisitedStatus(item.id, item.visited),
                   ),
                 );
               },

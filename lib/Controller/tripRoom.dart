@@ -15,6 +15,24 @@ import 'package:flutter/material.dart';
 class TripRoomController {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  Future<String> fetchTripRoomName(String tripRoomId) async {
+    try {
+      DocumentSnapshot tripRoomSnapshot = await FirebaseFirestore.instance
+          .collection('tripRooms')
+          .doc(tripRoomId)
+          .get();
+
+      if (tripRoomSnapshot.exists) {
+        return tripRoomSnapshot['name']; // Assuming 'name' is the field containing the trip room name
+      } else {
+        throw Exception('Trip room not found');
+      }
+    } catch (e) {
+      print('Error fetching trip room name: $e');
+      rethrow; // Propagate the error up
+    }
+  }
+
   static Future<List<TripRoom>> getUserTripRooms(String userId) async {
     try {
       QuerySnapshot querySnapshot = await _firestore.collection('UserTripRoom')
