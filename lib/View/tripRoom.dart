@@ -22,9 +22,12 @@ import '../Model/tripRoom.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
+import 'package:intl/intl.dart';
 
 
 //-------------------------display trip room main page--------------------------
+
+/*
 class TripRoomView extends StatefulWidget {
   final String tripRoomId;
 
@@ -41,6 +44,14 @@ class _TripRoomViewState extends State<TripRoomView> {
   List<Location> _itinerary = [];
   final ItineraryController _itineraryController = ItineraryController();
 
+  static const int morningStartHour = 9;
+  static const int morningEndHour = 13;
+  static const int afternoonStartHour = 14;
+  static const int afternoonEndHour = 18;
+  static const int eveningStartHour = 20;
+  static const int eveningEndHour = 22;
+  static const int locationDurationMinutes = 120; // Duration for each location
+
   @override
   void initState() {
     super.initState();
@@ -52,14 +63,9 @@ class _TripRoomViewState extends State<TripRoomView> {
   Future<void> _fetchTripRoom() async {
     try {
       tripRoom = await TripRoomController.getTripRoom(widget.tripRoomId);
-      setState(() {
-        //isLoading = false;
-      });
+      setState(() {});
     } catch (e) {
-      setState(() {
-        //isLoading = false;
-        //errorMessage = e.toString();
-      });
+      setState(() {});
       print('Error fetching trip room: $e');
     }
   }
@@ -77,14 +83,41 @@ class _TripRoomViewState extends State<TripRoomView> {
 
   void _generateAndLoadItinerary() async {
     try {
-      List<Location> itinerary = await _itineraryController.generateItinerary(
-          widget.tripRoomId);
+      List<Location> itinerary = await _itineraryController.generateItinerary(widget.tripRoomId);
+      if (itinerary.length > 6) {
+        _showWarningDialog();
+      }
       setState(() {
         _itinerary = itinerary;
       });
     } catch (e) {
       print("Error generating itinerary: $e");
     }
+  }
+
+  void _showWarningDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('ADVICE'),
+          content: Text('Your itinerary includes a significant number of locations.'
+              ' Please be aware that completing this itinerary may require more than one day.'),
+          actions: [
+            TextButton(
+              child: Text('Noted',style: GoogleFonts.poppins(
+                color: Color(0xFF7A9E9F),
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -104,7 +137,32 @@ class _TripRoomViewState extends State<TripRoomView> {
         );
       }
       return null;
-    }).whereType<Marker>().toSet(); // Filter out any null values
+    }).whereType<Marker>().toSet();
+  }
+
+  String _formatTimeForIndex(int index, int startHour) {
+    DateTime startTime = DateTime(2024, 1, 1, startHour).add(Duration(minutes: locationDurationMinutes * index));
+    return DateFormat.jm().format(startTime);
+  }
+
+  List<Map<String, dynamic>> _groupItineraryByTime(List<Location> itinerary) {
+    List<Map<String, dynamic>> groupedItinerary = [
+      {'time': 'Morning', 'items': []},
+      {'time': 'Evening', 'items': []},
+      {'time': 'Night', 'items': []},
+    ];
+
+    for (int i = 0; i < itinerary.length; i++) {
+      if (i < 2) {
+        groupedItinerary[0]['items'].add({'location': itinerary[i], 'time': _formatTimeForIndex(i, morningStartHour)});
+      } else if (i < 4) {
+        groupedItinerary[1]['items'].add({'location': itinerary[i], 'time': _formatTimeForIndex(i - 2, afternoonStartHour)});
+      } else {
+        groupedItinerary[2]['items'].add({'location': itinerary[i], 'time': _formatTimeForIndex(i - 4, eveningStartHour)});
+      }
+    }
+
+    return groupedItinerary;
   }
 
   @override
@@ -128,8 +186,7 @@ class _TripRoomViewState extends State<TripRoomView> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      WishlistScreen(tripRoomId: widget.tripRoomId),
+                  builder: (context) => WishlistScreen(tripRoomId: widget.tripRoomId),
                 ),
               ).then((_) => _generateAndLoadItinerary());
             },
@@ -140,53 +197,88 @@ class _TripRoomViewState extends State<TripRoomView> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            flex: 3,
-            child: GoogleMap(
+            flex: 5, // Half of the screen excluding app bar
+            child: _currentPosition != null
+                ? GoogleMap(
               onMapCreated: _onMapCreated,
               initialCameraPosition: CameraPosition(
-                target: LatLng(
-                    _currentPosition!.latitude, _currentPosition!.longitude),
+                target: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
                 zoom: 12,
               ),
               markers: _createMarkers(),
-            ),
+            )
+                : Center(child: CircularProgressIndicator()),
           ),
           Expanded(
-            flex: 2,
+            flex: 5, // Half of the screen excluding app bar
             child: Container(
-              color: Colors.white,
+              color: Colors.white.withOpacity(0.85),
               padding: EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Itinerary',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                    'Itinerary:',
+                    style: GoogleFonts.sourceSerifPro(
                       color: Color(0xFF7A9E9F),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 25,
                     ),
                   ),
                   SizedBox(height: 8),
                   Expanded(
                     child: ListView.builder(
-                      itemCount: _itinerary.length,
+                      itemCount: _groupItineraryByTime(_itinerary).length,
                       itemBuilder: (context, index) {
-                        final location = _itinerary[index];
-                        return ListTile(
-                          title: Text(location.name ?? 'Unknown'),
-                          subtitle: Text(
-                              location.description ?? 'No description'),
-                          trailing: location.visited
-                              ? Icon(Icons.check, color: Color(0xFF7A9E9F))
-                              : IconButton(
-                            icon: Icon(Icons.check_box_outline_blank),
-                            onPressed: () async {
-                              await _itineraryController.markLocationAsVisited(
-                                  widget.tripRoomId, location.id);
-                              _generateAndLoadItinerary();
-                            },
-                          ),
+                        var group = _groupItineraryByTime(_itinerary)[index];
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: 8),
+                            Text(
+                              group['time'],
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF7A9E9F),
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            ...group['items'].map<Widget>((item) {
+                              var location = item['location'];
+                              var time = item['time'];
+                              return ListTile(
+                                title: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(time,style: GoogleFonts.sourceSerifPro(
+                                      color: Color(0xFF7A9E9F),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 17,
+                                    ),), // Display the time above the name
+                                    Text(location.name ?? 'Unknown'),
+                                  ],
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(location.description ?? 'No description'),
+                                    SizedBox(height: 4), // Add some space between the subtitle and the additional text
+                                    Text(location.operatingHour), // Display the operating hour below the description
+                                  ],
+                                ),
+                                trailing: IconButton(
+                                  icon: location.visited
+                                      ? Icon(Icons.check, color: Color(0xFF7A9E9F))
+                                      : Icon(Icons.check_box_outline_blank),
+                                  onPressed: () async {
+                                    await _itineraryController.markLocationAsVisited(widget.tripRoomId, location.id);
+                                    _generateAndLoadItinerary();
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          ],
                         );
                       },
                     ),
@@ -202,8 +294,7 @@ class _TripRoomViewState extends State<TripRoomView> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  FilteredItineraryScreen(tripRoomId: widget.tripRoomId),
+              builder: (context) => FilteredItineraryScreen(tripRoomId: widget.tripRoomId),
             ),
           );
         },
@@ -213,123 +304,325 @@ class _TripRoomViewState extends State<TripRoomView> {
     );
   }
 }
+*/
 
+class TripRoomView extends StatefulWidget {
+  final String tripRoomId;
 
-//////////////////////////////////////////////////////////////////////////
-// List of trip rooms
-
-/*class TripRoomListView extends StatefulWidget {
-  final Future<List<TripRoom>> tripRoomsFuture;
-  final Future<void> Function(String searchTerm) searchTripRooms;
-  final Future<void> Function() refreshTripRooms;
-
-  TripRoomListView({
-    required this.tripRoomsFuture,
-    required this.searchTripRooms,
-    required this.refreshTripRooms,
-  });
+  TripRoomView({required this.tripRoomId});
 
   @override
-  _TripRoomListViewState createState() => _TripRoomListViewState();
+  _TripRoomViewState createState() => _TripRoomViewState();
 }
 
-class _TripRoomListViewState extends State<TripRoomListView> {
-  late Future<List<TripRoom>> _tripRoomsFuture;
+class _TripRoomViewState extends State<TripRoomView> {
+  late TripRoom tripRoom;
+  GoogleMapController? mapController;
+  Position? _currentPosition;
+  List<Location> _itinerary = [];
+  final ItineraryController _itineraryController = ItineraryController();
+
+  static const int morningStartHour = 9;
+  static const int morningEndHour = 13;
+  static const int afternoonStartHour = 14;
+  static const int afternoonEndHour = 18;
+  static const int eveningStartHour = 20;
+  static const int eveningEndHour = 22;
+  static const int locationDurationMinutes = 120; // Duration for each location
+  static const int locationsPerDay = 6; // Maximum number of locations per day
 
   @override
   void initState() {
     super.initState();
-    _tripRoomsFuture = widget.tripRoomsFuture;
+    _getCurrentLocation();
+    _generateAndLoadItinerary();
+    _fetchTripRoom();
+  }
+
+  Future<void> _fetchTripRoom() async {
+    try {
+      tripRoom = await TripRoomController.getTripRoom(widget.tripRoomId);
+      setState(() {});
+    } catch (e) {
+      setState(() {});
+      print('Error fetching trip room: $e');
+    }
+  }
+
+  void _getCurrentLocation() async {
+    try {
+      Position position = await _itineraryController.determinePosition();
+      setState(() {
+        _currentPosition = position;
+      });
+    } catch (e) {
+      print("Error getting current location: $e");
+    }
+  }
+
+  void _generateAndLoadItinerary() async {
+    try {
+      List<Location> itinerary = await _itineraryController.generateItinerary(widget.tripRoomId);
+      if (itinerary.length > locationsPerDay) {
+        _showWarningDialog();
+      }
+      setState(() {
+        _itinerary = itinerary;
+      });
+    } catch (e) {
+      print("Error generating itinerary: $e");
+    }
+  }
+
+  void _showWarningDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('ADVICE'),
+          content: Text('Your itinerary includes a significant number of locations.'
+              ' Please be aware that completing this itinerary may require more than one day.'),
+          actions: [
+            TextButton(
+              child: Text(
+                'Noted',
+                style: GoogleFonts.poppins(
+                  color: Color(0xFF7A9E9F),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+  }
+
+  Set<Marker> _createMarkers() {
+    return _itinerary.map((location) {
+      if (location.latitude != null && location.longitude != null) {
+        return Marker(
+          markerId: MarkerId(location.id),
+          position: LatLng(location.latitude!, location.longitude!),
+          infoWindow: InfoWindow(
+            title: location.name ?? 'Unknown',
+            snippet: location.description ?? 'No description',
+          ),
+        );
+      }
+      return null;
+    }).whereType<Marker>().toSet();
+  }
+
+  String _formatTimeForIndex(int index, int startHour) {
+    DateTime startTime = DateTime(2024, 1, 1, startHour).add(Duration(minutes: locationDurationMinutes * index));
+    return DateFormat.jm().format(startTime);
+  }
+
+  List<Map<String, dynamic>> _groupItineraryByTime(List<Location> itinerary) {
+    List<Map<String, dynamic>> groupedItinerary = [];
+
+    int dayCounter = 0;
+    int currentDayLocationIndex = 0;
+
+    for (int i = 0; i < itinerary.length; i++) {
+      if (currentDayLocationIndex == 0) {
+        // Start a new day group
+        groupedItinerary.add({'day': 'Day ${dayCounter + 1}', 'items': []});
+      }
+
+      // Determine the period (Morning, Evening, Night) based on the index
+      String period;
+      int startHour;
+      if (currentDayLocationIndex < 2) {
+        period = 'Morning';
+        startHour = morningStartHour;
+      } else if (currentDayLocationIndex < 4) {
+        period = 'Evening';
+        startHour = eveningStartHour;
+      } else {
+        period = 'Night';
+        startHour = eveningEndHour; // Start night from the end of the evening
+      }
+
+      // Format the time for the location within the day
+      String time = _formatTimeForIndex(currentDayLocationIndex % 6, startHour);
+
+      groupedItinerary[dayCounter]['items'].add({
+        'period': period,
+        'time': time,
+        'location': itinerary[i],
+      });
+
+      currentDayLocationIndex++;
+
+      // If we've reached the maximum locations per day, move to the next day
+      if (currentDayLocationIndex == locationsPerDay) {
+        dayCounter++;
+        currentDayLocationIndex = 0;
+      }
+    }
+
+    return groupedItinerary;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('TravelMate'),
-        backgroundColor: Color(0xFF7A9E9F),
+        title: Text(
+          tripRoom.name,
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 25,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
         actions: [
           IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () async {
-              String searchTerm = await _showSearchDialog(context);
-              if (searchTerm.isNotEmpty) {
-                await widget.searchTripRooms(searchTerm);
-                setState(() {
-                  _tripRoomsFuture = widget.tripRoomsFuture;
-                });
-              }
+            icon: Icon(Icons.favorite, color: Color(0xFF7A9E9F)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => WishlistScreen(tripRoomId: widget.tripRoomId),
+                ),
+              ).then((_) => _generateAndLoadItinerary());
             },
           ),
         ],
       ),
-      body: FutureBuilder<List<TripRoom>>(
-        future: _tripRoomsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No trip rooms found'));
-          } else {
-            List<TripRoom> tripRooms = snapshot.data!;
-            return RefreshIndicator(
-              onRefresh: widget.refreshTripRooms,
-              child: ListView.builder(
-                itemCount: tripRooms.length,
-                itemBuilder: (context, index) {
-                  TripRoom tripRoom = tripRooms[index];
-                  return Card(
-                    child: ListTile(
-                      title: Text(tripRoom.name),
-                      trailing: Text(
-                        tripRoom.CreatedDate.toLocal().toString().split(' ')[0],
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => MainPage2(tripRoomId: tripRoom.id, *//*itinerary: [],*//*),
-                          ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 5,
+            child: _currentPosition != null
+                ? GoogleMap(
+              onMapCreated: _onMapCreated,
+              initialCameraPosition: CameraPosition(
+                target: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                zoom: 12,
+              ),
+              markers: _createMarkers(),
+            )
+                : Center(child: CircularProgressIndicator()),
+          ),
+          Expanded(
+            flex: 5,
+            child: Container(
+              color: Colors.white.withOpacity(0.85),
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Itinerary:',
+                    style: GoogleFonts.sourceSerifPro(
+                      color: Color(0xFF7A9E9F),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 25,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _groupItineraryByTime(_itinerary).length,
+                      itemBuilder: (context, dayIndex) {
+                        var dayGroup = _groupItineraryByTime(_itinerary)[dayIndex];
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: 8),
+                            Text(
+                              dayGroup['day'],
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF7A9E9F),
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            ...dayGroup['items'].map<Widget>((item) {
+                              var location = item['location'];
+                              var time = item['time'];
+                              var period = item['period'];
+                              return ListTile(
+                                title: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '$period - $time',
+                                      style: GoogleFonts.sourceSerifPro(
+                                        color: Color(0xFF7A9E9F),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 17,
+                                      ),
+                                    ), // Display the period and time
+                                    Text(location.name ?? 'Unknown'),
+                                  ],
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(location.description ?? 'No description'),
+                                    SizedBox(height: 4), // Add some space between the subtitle and the additional text
+                                    Text(location.operatingHour), // Display the operating hour below the description
+                                  ],
+                                ),
+                                trailing: IconButton(
+                                  icon: location.visited
+                                      ? Icon(Icons.check, color: Color(0xFF7A9E9F))
+                                      : Icon(Icons.check_box_outline_blank),
+                                  onPressed: () async {
+                                    await _itineraryController.markLocationAsVisited(widget.tripRoomId, location.id);
+                                    _generateAndLoadItinerary();
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          ],
                         );
                       },
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
-            );
-          }
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FilteredItineraryScreen(tripRoomId: widget.tripRoomId),
+            ),
+          );
         },
+        child: Icon(Icons.add_location),
+        backgroundColor: Color(0xFF7A9E9F),
       ),
     );
   }
 
-  Future<String> _showSearchDialog(BuildContext context) async {
-    TextEditingController _searchController = TextEditingController();
-    return await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Search Trip Rooms'),
-          content: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(hintText: 'Enter search term'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(_searchController.text);
-              },
-              child: Text('Search'),
-            ),
-          ],
-        );
-      },
-    ) ?? '';
-  }
-}*/
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////
+// List of trip rooms
 
 class TripRoomListView extends StatefulWidget {
   @override

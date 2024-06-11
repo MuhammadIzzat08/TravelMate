@@ -369,7 +369,7 @@ class FilteredItineraryController {
         ...accessability ?? [],
       ].any((option) {
         // Check if the option matches the Type, Price, Purpose, or Accessibility field in the location data
-        return location.type.toLowerCase().contains(option.toLowerCase()) ||
+        return location.type ==option/*toLowerCase().contains(option.toLowerCase())*/ ||
             location.cuisine.toLowerCase().contains(option.toLowerCase()) ||
             location.price.toLowerCase().contains(option.toLowerCase()) ||
             location.purpose.toLowerCase().contains(option.toLowerCase()) ||

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:travelmate/Controller/wishlist.dart';
 import 'package:travelmate/Model/wishlist.dart';
 import '../Controller/itinerary.dart';
@@ -74,7 +75,15 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Filtered Locations'),
+        title: Text('Filtered Locations',
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
       ),
       body: Column(
         children: [
@@ -121,7 +130,12 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return AlertDialog(
-              title: Text('Filter Locations'),
+              title: Text('Filter Locations',
+                style: GoogleFonts.poppins(
+                  color: Color(0xFF7A9E9F),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),),
               content: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,29 +148,45 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
                         'City',
                         'Beach',
                         'History',
+                        /*'Halal',
+                        'Non-Halal'*/
+                      ],
+                      setState,
+                    ),
+                    SizedBox(height:30),
+                    _buildFilterCheckboxList(
+                      'Cuisine Status:',
+                      selectedPlaceTypes,
+                      [
                         'Halal',
                         'Non-Halal'
                       ],
                       setState,
                     ),
+                    SizedBox(height:30),
                     _buildFilterCheckboxList(
                       'Cuisine Type:',
                       selectedCuisineTypes,
                       ['Western', 'Malay', 'Chinese'],
                       setState,
                     ),
+                    SizedBox(height:30),
                     _buildFilterCheckboxList(
                       'Price Rate:',
                       selectedPriceRates,
                       ['Moderate', 'Affordable', 'Expensive'],
                       setState,
                     ),
+
+                   /* SizedBox(height:30),
                     _buildFilterCheckboxList(
                       'Purpose:',
                       selectedPurposes,
                       ['Family', 'Friend', 'Solo'],
                       setState,
-                    ),
+                    ),*/
+
+                    SizedBox(height:30),
                     _buildFilterCheckboxList(
                       'Accessibility:',
                       selectedAccessibilities,
@@ -171,14 +201,24 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  child: Text('Cancel'),
+                  child: Text('Cancel',
+                    style: GoogleFonts.poppins(
+                      color: Color(0xFF7A9E9F),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),),
                 ),
                 TextButton(
                   onPressed: () {
                     _applyFilters();
                     Navigator.pop(context);
                   },
-                  child: Text('Apply'),
+                  child: Text('Apply',
+                    style: GoogleFonts.poppins(
+                      color: Color(0xFF7A9E9F),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),),
                 ),
               ],
             );
@@ -227,7 +267,7 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
 }
 
 
-
+//-------------------------Details location Screen------------------------------
 class PlaceDetailsScreen extends StatefulWidget {
   final LocationFilter location;
   final String tripRoomId; // Trip room ID
@@ -245,7 +285,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.location.name),
+        title: Text(widget.location.name,style: GoogleFonts.poppins(
+          color: Color(0xFF7A9E9F),
+          fontWeight: FontWeight.bold,
+          fontSize: 20,
+        ),),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -261,7 +307,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
             Text('Accessibility: ${widget.location.accessability}'),
             ElevatedButton(
               onPressed: _addToWishlist,
-              child: Text('Add To Wishlist'),
+              child: Text('Add To Wishlist',),
             ),
           ],
         ),

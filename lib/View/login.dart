@@ -88,6 +88,7 @@ class _LoginPageState extends State<LoginPage> {
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:travelmate/View/registration.dart';
 import 'package:travelmate/View/tripRoom.dart';
 
 
@@ -143,52 +144,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return tripRoomIds;
   }
 
- /* @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Login'),
-        backgroundColor: Color(0xFF7A9E9F),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              TextField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                ),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                ),
-                obscureText: true,
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _login,
-                child: Text('Login'),
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all<Color>(Color(0xFF7A9E9F)),
-                ),
-              ),
-              if (_errorMessage.isNotEmpty)
-                Text(
-                  _errorMessage,
-                  style: TextStyle(color: Colors.red),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }*/
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -256,6 +211,23 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
+                        SizedBox(height: 10),
+                        TextButton(
+                          onPressed: () {
+                            // Navigate to the registration screen or perform any desired action
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => RegistrationPage()),
+                            );
+                          },
+                          child: Text('Register Account'),
+                          style: ButtonStyle(
+                            foregroundColor: MaterialStateProperty.all<Color>(Color(0xFF7A9E9F)),
+                            textStyle: MaterialStateProperty.all<TextStyle>(
+                              TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
                         if (_errorMessage.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10.0),
@@ -276,5 +248,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+
 }
 
