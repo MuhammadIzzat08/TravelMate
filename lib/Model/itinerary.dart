@@ -1,7 +1,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class Location {
+/*class Location {
   String id;
   String? description;
   double? latitude;
@@ -10,6 +10,7 @@ class Location {
   String? operatingHour;
   String? price;
   String? type;
+  double? approximate_time;
   bool visited;
 
   Location({
@@ -21,6 +22,7 @@ class Location {
     this.operatingHour,
     this.price,
     this.type,
+    this.approximate_time,
     this.visited = false,
   });
 
@@ -34,6 +36,7 @@ class Location {
       operatingHour: map['Operating_hour'],
       price: map['Price'],
       type: map['Type'],
+      approximate_time: map['Approximate_Time'],
       visited: map['Visited'] ?? false,
     );
   }
@@ -47,10 +50,69 @@ class Location {
       'Operating_hour': operatingHour,
       'Price': price,
       'Type': type,
+      'Approximate_Time': approximate_time,
+      'Visited': visited,
+    };
+  }
+}*/
+
+class Location {
+  String id;
+  String? description;
+  double? latitude;
+  double? longitude;
+  String? name;
+  String? operatingHour;
+  String? price;
+  String? type;
+  double? approximateTime;
+  bool visited;
+
+  Location({
+    required this.id,
+    this.description,
+    this.latitude,
+    this.longitude,
+    this.name,
+    this.operatingHour,
+    this.price,
+    this.type,
+    this.approximateTime,
+    this.visited = false,
+  });
+
+  factory Location.fromMap(String id, Map<String, dynamic> map) {
+    return Location(
+      id: id,
+      description: map['Description'],
+      latitude: map['Latitude'],
+      longitude: map['Longitude'],
+      name: map['Name'],
+      operatingHour: map['Operating_hour'],
+      price: map['Price'],
+      type: map['Type'],
+      approximateTime: map['Approximate_Time']?.toDouble(),
+      visited: map['Visited'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'Description': description,
+      'Latitude': latitude,
+      'Longitude': longitude,
+      'Name': name,
+      'Operating_hour': operatingHour,
+      'Price': price,
+      'Type': type,
+      'Approximate_Time': approximateTime,
       'Visited': visited,
     };
   }
 }
+
+
+
 
 // FILTERED LOCATION MODEL //
 class LocationFilter {

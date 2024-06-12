@@ -6,191 +6,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:travelmate/Model/itinerary.dart';
 
-/*class ItineraryController {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-   Future<Position> determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
-
-    return await Geolocator.getCurrentPosition();
-  }
 
 
-  Future<List<Location>> getLocations() async {
-    try {
-      final locationsRef = _firestore.collection('locations');
-      final querySnapshot = await locationsRef.get();
-      final locations = querySnapshot.docs.map((doc) => Location.fromMap(doc.id, doc.data())).toList();
-      return locations;
-    } catch (e) {
-      // Handle error
-      print('Error fetching locations: $e');
-      return []; // Return an empty list in case of error
-    }
-  }
-  Future<List<Location>> getWishlistItems(String tripRoomId) async {
-    try {
-      final querySnapshot = await _firestore
-          .collection('wishlist')
-          .where('tripRoomId', isEqualTo: tripRoomId)
-          .get();
-
-      final locationIds = querySnapshot.docs.map((doc) {
-        return doc['locationId'];
-      }).toList();
-
-      final locationDetails = await Future.wait(locationIds.map((id) async {
-        final docSnapshot = await _firestore.collection('locations').doc(id).get();
-        if (docSnapshot.exists) {
-          return Location.fromMap(docSnapshot.id, docSnapshot.data()!);
-        } else {
-          return null;
-        }
-      }).toList());
-
-      return locationDetails.where((details) => details != null).cast<Location>().toList();
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  Future<void> saveItinerary(String tripRoomId, List<Location> itinerary) async {
-    final itineraryData = itinerary.map((location) => location.toMap()).toList();
-    final newItineraryRef = await _firestore.collection('itineraries').add({
-      'tripRoomId': tripRoomId,
-      'itinerary': itineraryData,
-    });
-    await _firestore.collection('tripRooms').doc(tripRoomId).update({
-      'itineraryId': newItineraryRef.id,
-    });
-  }
-
-  Future<List<Location>> getItinerary(String tripRoomId) async {
-    try {
-      final querySnapshot = await _firestore
-          .collection('itineraries')
-          .where('tripRoomId', isEqualTo: tripRoomId)
-          .limit(1)
-          .get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        final doc = querySnapshot.docs.first;
-        final data = doc.data();
-        final locationsData = data['locations'] as List<dynamic>? ?? [];
-
-        return locationsData.map((item) => Location.fromMap(item['id'] as String, item as Map<String, dynamic>)).toList();
-      } else {
-        return [];
-      }
-    } catch (e) {
-      throw e;
-    }
-  }
-
-
-
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-    const double R = 6371; // Radius of the Earth in kilometers
-    final double dLat = _degreesToRadians(lat2 - lat1);
-    final double dLon = _degreesToRadians(lon2 - lon1);
-    final double a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(_degreesToRadians(lat1)) * cos(_degreesToRadians(lat2)) *
-            sin(dLon / 2) * sin(dLon / 2);
-    final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    return R * c;
-  }
-
-  double _degreesToRadians(double degrees) {
-    return degrees * pi / 180;
-  }
-
-  void sortLocationsByDistance(List<Location> locations, Position startLocation) {
-    locations.sort((a, b) {
-      final double distanceA = _calculateDistance(startLocation.latitude!, startLocation.longitude!, a.latitude!, a.longitude!);
-      final double distanceB = _calculateDistance(startLocation.latitude!, startLocation.longitude!, b.latitude!, b.longitude!);
-      return distanceA.compareTo(distanceB);
-    });
-  }
-
-*//*  Future<List<Location>> generateItinerary(String tripRoomId, List<Location> wishlistItems) async {
-    try {
-      // Define your starting location
-      Location startLocation = wishlistItems.first;
-
-      // Sort wishlist items by distance from the starting point
-      sortLocationsByDistance(wishlistItems, startLocation);
-
-      // Save the sorted itinerary
-      await saveItinerary(tripRoomId, wishlistItems);
-
-      return wishlistItems;
-    } catch (e) {
-      throw e;
-    }
-  }*//*
-  Future<List<Location>> generateItinerary(String tripRoomId, List<Location> wishlistItems) async {
-    try {
-      final userPosition = await determinePosition();
-      sortLocationsByDistance(wishlistItems, userPosition);
-      await saveItinerary(tripRoomId, wishlistItems);
-      return wishlistItems;
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  Future<void> markLocationAsVisited(String tripRoomId, String locationId) async {
-    try {
-      final querySnapshot = await _firestore.collection('itineraries')
-          .where('tripRoomId', isEqualTo: tripRoomId)
-          .limit(1)
-          .get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        final doc = querySnapshot.docs.first;
-        final data = doc.data();
-        final itinerary = data['itinerary'] as List<dynamic>;
-
-        final updatedItinerary = itinerary.map((item) {
-          if (item['id'] == locationId) {
-            return {...item, 'visited': true};
-          }
-          return item;
-        }).toList();
-
-        await _firestore.collection('itineraries').doc(doc.id).update({
-          'itinerary': updatedItinerary,
-        });
-      }
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  Future<void> updateItineraryWithGeofencing(String tripRoomId) async {
-    // Implement geofencing setup here
-  }
-}*/
-
+/*
 class ItineraryController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -327,7 +145,166 @@ class ItineraryController {
   }
 }
 
+*/
 
+class ItineraryController {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<List<Location>> getLocations() async {
+    try {
+      final locationsRef = _firestore.collection('locations');
+      final querySnapshot = await locationsRef.get();
+      final locations = querySnapshot.docs.map((doc) => Location.fromMap(doc.id, doc.data())).toList();
+      return locations;
+    } catch (e) {
+      print('Error fetching locations: $e');
+      return [];
+    }
+  }
+
+  Future<Position> determinePosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error('Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    return await Geolocator.getCurrentPosition();
+  }
+
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const double R = 6371;
+    final double dLat = _degreesToRadians(lat2 - lat1);
+    final double dLon = _degreesToRadians(lon2 - lon1);
+    final double a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(_degreesToRadians(lat1)) * cos(_degreesToRadians(lat2)) *
+            sin(dLon / 2) * sin(dLon / 2);
+    final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return R * c;
+  }
+
+  double _degreesToRadians(double degrees) {
+    return degrees * pi / 180;
+  }
+
+  void sortLocationsByDistance(List<Location> locations, Position startLocation) {
+    locations.sort((a, b) {
+      final double distanceA = _calculateDistance(startLocation.latitude, startLocation.longitude, a.latitude!, a.longitude!);
+      final double distanceB = _calculateDistance(startLocation.latitude, startLocation.longitude, b.latitude!, b.longitude!);
+      return distanceA.compareTo(distanceB);
+    });
+  }
+
+  List<Location> filterLocationsByTime(List<Location> locations, DateTime currentTime) {
+    List<Location> filteredLocations = [];
+
+    for (var location in locations) {
+      final operatingHours = location.operatingHour;
+      final approximateTime = location.approximateTime ?? 0.0;
+
+      if (operatingHours == "24-Hours" ||
+          (operatingHours == "Breakfast" && currentTime.hour >= 8 && currentTime.hour < 12) ||
+          (operatingHours == "Lunch" && currentTime.hour >= 12 && currentTime.hour < 17) ||
+          (operatingHours == "Office Hour" && currentTime.hour >= 8 && currentTime.hour < 18) ||
+          (operatingHours == "Dinner" && currentTime.hour >= 20 && currentTime.hour < 24)) {
+        if (currentTime.add(Duration(hours: approximateTime.toInt())).hour <= 23) {
+          filteredLocations.add(location);
+        }
+      }
+    }
+
+    return filteredLocations;
+  }
+
+  Future<List<Location>> getWishlistItems(String tripRoomId) async {
+    try {
+      final wishlistSnapshot = await _firestore
+          .collection('wishlist')
+          .where('tripRoomId', isEqualTo: tripRoomId)
+          .where('Visited', isEqualTo: false)
+          .get();
+
+      final locationIds = wishlistSnapshot.docs.map((doc) => doc['locationId']).toList();
+
+      final locations = await Future.wait(locationIds.map((id) async {
+        final docSnapshot = await _firestore.collection('locations').doc(id).get();
+        if (docSnapshot.exists) {
+          return Location.fromMap(docSnapshot.id, docSnapshot.data()!);
+        } else {
+          return null;
+        }
+      }).toList());
+
+      return locations.where((location) => location != null).cast<Location>().toList();
+    } catch (e) {
+      print('Error fetching wishlist items: $e');
+      throw e;
+    }
+  }
+
+  Future<List<Location>> generateItinerary(String tripRoomId) async {
+    try {
+      final userPosition = await determinePosition();
+      final wishlistItems = await getWishlistItems(tripRoomId);
+
+      sortLocationsByDistance(wishlistItems, userPosition);
+
+      DateTime currentTime = DateTime(2024, 1, 1, 9, 0);
+
+      List<Location> finalItinerary = [];
+
+      while (currentTime.hour <= 23 && wishlistItems.isNotEmpty) {
+        List<Location> filteredLocations = filterLocationsByTime(wishlistItems, currentTime);
+        if (filteredLocations.isNotEmpty) {
+          Location nextLocation = filteredLocations.first;
+          finalItinerary.add(nextLocation);
+          currentTime = currentTime.add(Duration(hours: nextLocation.approximateTime!.toInt()));
+          wishlistItems.remove(nextLocation);
+        } else {
+          break;
+        }
+      }
+
+      return finalItinerary;
+    } catch (e) {
+      print('Error generating itinerary: $e');
+      throw e;
+    }
+  }
+
+  Future<void> markLocationAsVisited(String tripRoomId, String locationId) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('wishlist')
+          .where('tripRoomId', isEqualTo: tripRoomId)
+          .where('locationId', isEqualTo: locationId)
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        final doc = querySnapshot.docs.first;
+        await _firestore.collection('wishlist').doc(doc.id).update({'Visited': true});
+      }
+    } catch (e) {
+      print('Error marking location as visited: $e');
+      throw e;
+    }
+  }
+}
 
 
 
