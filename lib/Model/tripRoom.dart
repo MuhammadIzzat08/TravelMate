@@ -5,12 +5,14 @@ class TripRoom {
   final String name;
   final String profilePicture;
   final DateTime CreatedDate;
+  final int daysSpent;
 
   TripRoom({
     required this.id,
     required this.name,
     required this.profilePicture,
-    required this.CreatedDate
+    required this.CreatedDate,
+    required this.daysSpent,
   });
 
   factory TripRoom.fromMap(Map<String, dynamic> map, String id) {
@@ -19,6 +21,7 @@ class TripRoom {
       name: map['name'],
       profilePicture: map['profilePicture'],
       CreatedDate:(map['CreatedDate'] as Timestamp).toDate(),
+      daysSpent: map['daysSpent'] ?? 1,
     );
   }
 
@@ -27,6 +30,7 @@ class TripRoom {
       'name': name,
       'profilePicture': profilePicture,
       'CreatedDate': CreatedDate,
+      'daysSpent': daysSpent,
     };
   }
 }

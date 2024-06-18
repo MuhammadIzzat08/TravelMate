@@ -98,14 +98,15 @@ class TripRoomController {
     return await snapshot.ref.getDownloadURL();
   }
 
-  static Future<void> createTripRoom(String userId, String name,
-      String profilePicture) async {
+
+  static Future<void> createTripRoom(
+      String userId, String name, String profilePicture, int daysSpent) async {
     try {
-      DocumentReference tripRoomRef = await _firestore.collection('tripRooms')
-          .add({
+      DocumentReference tripRoomRef = await _firestore.collection('tripRooms').add({
         'name': name,
         'profilePicture': profilePicture,
         'CreatedDate': FieldValue.serverTimestamp(),
+        'daysSpent': daysSpent,
       });
 
       await _firestore.collection('UserTripRoom').add({
@@ -176,6 +177,38 @@ class TripRoomController {
 
     return memberNames;
   }
+
+  // New method to update trip room name
+  static Future<void> updateTripRoomName(String tripRoomId, String newName) async {
+    try {
+      await _firestore.collection('tripRooms').doc(tripRoomId).update({'name': newName});
+    } catch (e) {
+      throw Exception('Failed to update trip room name: $e');
+    }
+  }
+
+  // New method to update daysSpent
+  static Future<void> updateTripRoomDaysSpent(String tripRoomId, int newDaysSpent) async {
+    try {
+      await _firestore.collection('tripRooms').doc(tripRoomId).update({'daysSpent': newDaysSpent});
+    } catch (e) {
+      throw Exception('Failed to update daysSpent: $e');
+    }
+  }
+
+  static Future<void> updateTripRoomDetails(String tripRoomId, String newName, int newDaysSpent) async {
+    try {
+      await _firestore.collection('tripRooms').doc(tripRoomId).update({
+        'name': newName,
+        'daysSpent': newDaysSpent,
+      });
+    } catch (e) {
+      throw Exception('Failed to update trip room details: $e');
+    }
+  }
+
+
+
 
 
 }

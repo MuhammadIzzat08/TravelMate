@@ -107,4 +107,27 @@ class WishlistController {
       return false;
     }
   }
+
+  // New method to get the number of days for the trip from tripRooms collection
+  Future<int> getTripDays(String tripRoomId) async {
+    try {
+      final docSnapshot = await _firestore.collection('tripRooms').doc(tripRoomId).get();
+      if (docSnapshot.exists && docSnapshot.data() != null) {
+        return docSnapshot.data()!['daysSpent'] ?? 0;
+      } else {
+        print('Trip room with ID $tripRoomId does not exist or has no days field');
+        return 0;
+      }
+    } catch (e) {
+      print('Error fetching trip days: $e');
+      throw e;
+    }
+  }
+
+
 }
+
+
+
+
+

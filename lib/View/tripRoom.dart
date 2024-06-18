@@ -622,7 +622,7 @@ class _TripRoomViewState extends State<TripRoomView> {
 
 */ //YANG NIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 
-class TripRoomView extends StatefulWidget {
+/*class TripRoomView extends StatefulWidget {
   final String tripRoomId;
 
   TripRoomView({required this.tripRoomId});
@@ -872,7 +872,557 @@ class _TripRoomViewState extends State<TripRoomView> {
       ),
     );
   }
+}*/
+
+/*class TripRoomView extends StatefulWidget {
+  final String tripRoomId;
+
+  TripRoomView({required this.tripRoomId});
+
+  @override
+  _TripRoomViewState createState() => _TripRoomViewState();
 }
+
+class _TripRoomViewState extends State<TripRoomView> {
+  late TripRoom tripRoom;
+  GoogleMapController? mapController;
+  Position? _currentPosition;
+  List<Location> _itinerary = [];
+  final ItineraryController _itineraryController = ItineraryController();
+
+  static const int initialStartHour = 9; // Initial start hour for the first location
+
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+    _generateAndLoadItinerary();
+    _fetchTripRoom();
+  }
+
+  Future<void> _fetchTripRoom() async {
+    try {
+      tripRoom = await TripRoomController.getTripRoom(widget.tripRoomId);
+      setState(() {});
+    } catch (e) {
+      setState(() {});
+      print('Error fetching trip room: $e');
+    }
+  }
+
+  void _getCurrentLocation() async {
+    try {
+      Position position = await _itineraryController.determinePosition();
+      setState(() {
+        _currentPosition = position;
+      });
+    } catch (e) {
+      print("Error getting current location: $e");
+    }
+  }
+
+  void _generateAndLoadItinerary() async {
+    try {
+      List<Location> itinerary = await _itineraryController.generateItinerary(widget.tripRoomId);
+      setState(() {
+        _itinerary = itinerary;
+      });
+    } catch (e) {
+      print("Error generating itinerary: $e");
+    }
+  }
+
+  void _showWarningDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('ADVICE'),
+          content: Text('Your itinerary includes a significant number of locations.'
+              ' Please be aware that completing this itinerary may require more than one day.'),
+          actions: [
+            TextButton(
+              child: Text(
+                'Noted',
+                style: GoogleFonts.poppins(
+                  color: Color(0xFF7A9E9F),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+  }
+
+  Set<Marker> _createMarkers() {
+    return _itinerary.map((location) {
+      if (location.latitude != null && location.longitude != null) {
+        return Marker(
+          markerId: MarkerId(location.id),
+          position: LatLng(location.latitude!, location.longitude!),
+          infoWindow: InfoWindow(
+            title: location.name ?? 'Unknown',
+            snippet: location.description ?? 'No description',
+          ),
+        );
+      }
+      return null;
+    }).whereType<Marker>().toSet();
+  }
+
+  String _formatTimeRange(DateTime startTime, DateTime endTime) {
+    return '${DateFormat.jm().format(startTime)} - ${DateFormat.jm().format(endTime)}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          tripRoom.name,
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 25,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.favorite, color: Color(0xFF7A9E9F)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => WishlistScreen(tripRoomId: widget.tripRoomId),
+                ),
+              ).then((_) => _generateAndLoadItinerary());
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 5,
+            child: _currentPosition != null
+                ? GoogleMap(
+              onMapCreated: _onMapCreated,
+              initialCameraPosition: CameraPosition(
+                target: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                zoom: 12,
+              ),
+              markers: _createMarkers(),
+            )
+                : Center(child: CircularProgressIndicator()),
+          ),
+          Expanded(
+            flex: 5,
+            child: Container(
+              color: Colors.white.withOpacity(0.85),
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Itinerary:',
+                    style: GoogleFonts.sourceSerifPro(
+                      color: Color(0xFF7A9E9F),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 25,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _itinerary.length,
+                      itemBuilder: (context, index) {
+                        var location = _itinerary[index];
+                        var approximateTimeMinutes = ((location.approximateTime ?? 2) * 60).ceil();
+
+                        // Determine the start time for the current location
+                        DateTime startTime;
+                        if (index == 0) {
+                          startTime = DateTime(
+                            DateTime.now().year,
+                            DateTime.now().month,
+                            DateTime.now().day,
+                            initialStartHour,
+                          );
+                        } else {
+                          // Use the end time of the previous location
+                          var previousEndTime = _itinerary[index - 1].endTime;
+                          startTime = previousEndTime ?? DateTime.now();
+                        }
+
+                        // Calculate the end time for the current location
+                        var endTime = startTime.add(Duration(minutes: approximateTimeMinutes));
+
+                        // Save the end time back to the location object
+                        location.endTime = endTime;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _formatTimeRange(startTime, endTime),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            ListTile(
+                              title: Text(
+                                location.name ?? 'Unknown',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(location.description ?? 'No description'),
+                                  Text('Operating Hours: ${location.operatingHour ?? "N/A"}'),
+                                  Text('Approximate Time: ${location.approximateTime ?? "N/A"} hours'),
+                                ],
+                              ),
+                              trailing: IconButton(
+                                icon: location.visited ? Icon(Icons.check, color: Color(0xFF7A9E9F)) : Icon(Icons.check_box_outline_blank),
+                                onPressed: () async {
+                                  await _itineraryController.markLocationAsVisited(widget.tripRoomId, location.id);
+                                  _generateAndLoadItinerary();
+                                },
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FilteredItineraryScreen(tripRoomId: widget.tripRoomId),
+            ),
+          );
+        },
+        child: Icon(Icons.add_location),
+        backgroundColor: Color(0xFF7A9E9F),
+      ),
+    );
+  }
+}*/ //latest
+
+class TripRoomView extends StatefulWidget {
+  final String tripRoomId;
+
+  TripRoomView({required this.tripRoomId});
+
+  @override
+  _TripRoomViewState createState() => _TripRoomViewState();
+}
+
+class _TripRoomViewState extends State<TripRoomView> {
+  late TripRoom tripRoom;
+  GoogleMapController? mapController;
+  Position? _currentPosition;
+  Map<int, List<Location>> _dailyItinerary = {};
+  final ItineraryController _itineraryController = ItineraryController();
+
+  static const int initialStartHour = 9; // Initial start hour for the first location
+  static const int endHour = 22; // Ending hour for the itinerary
+
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+    _fetchTripRoom().then((_) => _generateAndLoadItinerary());
+  }
+
+  Future<void> _fetchTripRoom() async {
+    try {
+      tripRoom = await TripRoomController.getTripRoom(widget.tripRoomId);
+      setState(() {});
+    } catch (e) {
+      setState(() {});
+      print('Error fetching trip room: $e');
+    }
+  }
+
+  void _getCurrentLocation() async {
+    try {
+      Position position = await _itineraryController.determinePosition();
+      setState(() {
+        _currentPosition = position;
+      });
+    } catch (e) {
+      print("Error getting current location: $e");
+    }
+  }
+
+  void _generateAndLoadItinerary() async {
+    try {
+      List<Location> itinerary = await _itineraryController.generateItinerary(widget.tripRoomId);
+      if (tripRoom.daysSpent > 0) {
+        _dailyItinerary = _splitItineraryIntoDays(itinerary, tripRoom.daysSpent);
+        setState(() {});
+      } else {
+        print('Invalid trip daysSpent');
+      }
+    } catch (e) {
+      print("Error generating itinerary: $e");
+    }
+  }
+
+  Map<int, List<Location>> _splitItineraryIntoDays(List<Location> itinerary, int daysSpent) {
+    const int hoursPerDay = endHour - initialStartHour; // Hours available each day
+    const int minutesPerDay = hoursPerDay * 60;
+    Map<int, List<Location>> dailyItinerary = {};
+
+    int currentDay = 1;
+    int remainingMinutesInDay = minutesPerDay;
+
+    for (Location location in itinerary) {
+      int approximateTimeMinutes = ((location.approximateTime ?? 2) * 60).ceil();
+
+      if (remainingMinutesInDay >= approximateTimeMinutes) {
+        // Add location to the current day
+        dailyItinerary.putIfAbsent(currentDay, () => []).add(location);
+        remainingMinutesInDay -= approximateTimeMinutes;
+      } else {
+        // Move to the next day
+        currentDay++;
+        if (currentDay > daysSpent) {
+          break; // We've exhausted the number of days
+        }
+        remainingMinutesInDay = minutesPerDay - approximateTimeMinutes;
+        dailyItinerary.putIfAbsent(currentDay, () => []).add(location);
+      }
+    }
+    return dailyItinerary;
+  }
+
+  void _showWarningDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('ADVICE'),
+          content: Text('Your itinerary includes a significant number of locations.'
+              ' Please be aware that completing this itinerary may require more than one day.'),
+          actions: [
+            TextButton(
+              child: Text(
+                'Noted',
+                style: GoogleFonts.poppins(
+                  color: Color(0xFF7A9E9F),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+  }
+
+  Set<Marker> _createMarkers() {
+    return _dailyItinerary.values.expand((dayLocations) {
+      return dayLocations.map((location) {
+        if (location.latitude != null && location.longitude != null) {
+          return Marker(
+            markerId: MarkerId(location.id),
+            position: LatLng(location.latitude!, location.longitude!),
+            infoWindow: InfoWindow(
+              title: location.name ?? 'Unknown',
+              snippet: location.description ?? 'No description',
+            ),
+          );
+        }
+        return null;
+      }).whereType<Marker>().toSet();
+    }).toSet();
+  }
+
+  String _formatTimeRange(DateTime startTime, DateTime endTime) {
+    return '${DateFormat.jm().format(startTime)} - ${DateFormat.jm().format(endTime)}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          tripRoom.name,
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 25,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.favorite, color: Color(0xFF7A9E9F)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => WishlistScreen(tripRoomId: widget.tripRoomId),
+                ),
+              ).then((_) => _generateAndLoadItinerary());
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 5,
+            child: _currentPosition != null
+                ? GoogleMap(
+              onMapCreated: _onMapCreated,
+              initialCameraPosition: CameraPosition(
+                target: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                zoom: 12,
+              ),
+              markers: _createMarkers(),
+            )
+                : Center(child: CircularProgressIndicator()),
+          ),
+          Expanded(
+            flex: 5,
+            child: Container(
+              color: Colors.white.withOpacity(0.85),
+              padding: EdgeInsets.all(16),
+              child: ListView.builder(
+                itemCount: _dailyItinerary.length,
+                itemBuilder: (context, dayIndex) {
+                  int day = dayIndex + 1;
+                  List<Location> locations = _dailyItinerary[day] ?? [];
+                  return ExpansionTile(
+                    title: Text(
+                      'Day $day',
+                      style: GoogleFonts.sourceSerifPro(
+                        color: Color(0xFF7A9E9F),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 25,
+                      ),
+                    ),
+                    children: locations.map((location) {
+                      var approximateTimeMinutes = ((location.approximateTime ?? 2) * 60).ceil();
+
+                      // Determine the start time for the current location
+                      DateTime startTime;
+                      if (locations.indexOf(location) == 0) {
+                        startTime = DateTime(
+                          DateTime.now().year,
+                          DateTime.now().month,
+                          DateTime.now().day + (day - 1),
+                          initialStartHour,
+                        );
+                      } else {
+                        // Use the end time of the previous location
+                        var previousEndTime = locations[locations.indexOf(location) - 1].endTime;
+                        startTime = previousEndTime ?? DateTime.now();
+                      }
+
+                      // Calculate the end time for the current location
+                      var endTime = startTime.add(Duration(minutes: approximateTimeMinutes));
+
+                      // Save the end time back to the location object
+                      location.endTime = endTime;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _formatTimeRange(startTime, endTime),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          ListTile(
+                            title: Text(
+                              location.name ?? 'Unknown',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(location.description ?? 'No description'),
+                                Text('Operating Hours: ${location.operatingHour ?? "N/A"}'),
+                                Text('Approximate Time: ${location.approximateTime ?? "N/A"} hours'),
+                              ],
+                            ),
+                            trailing: IconButton(
+                              icon: location.visited
+                                  ? Icon(Icons.check, color: Color(0xFF7A9E9F))
+                                  : Icon(Icons.check_box_outline_blank),
+                              onPressed: () async {
+                                await _itineraryController.markLocationAsVisited(widget.tripRoomId, location.id);
+                                _generateAndLoadItinerary();
+                              },
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                        ],
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FilteredItineraryScreen(tripRoomId: widget.tripRoomId),
+            ),
+          );
+        },
+        child: Icon(Icons.add_location),
+        backgroundColor: Color(0xFF7A9E9F),
+      ),
+    );
+  }
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 // List of trip rooms
 
@@ -1342,6 +1892,7 @@ class _MainPage2State extends State<MainPage2> {
 
 //----------------------CREATE TRIP ROOM!!!!!!----------------------------------
 
+/*
 class CreateTripRoomPage extends StatefulWidget {
   final VoidCallback? onRoomCreated; // Callback function
 
@@ -1458,11 +2009,282 @@ class _CreateTripRoomPageState extends State<CreateTripRoomPage> {
     );
   }
 }
+*/
+
+/*class CreateTripRoomPage extends StatefulWidget {
+  final VoidCallback? onRoomCreated; // Callback function
+
+  CreateTripRoomPage({this.onRoomCreated});
+
+  @override
+  _CreateTripRoomPageState createState() => _CreateTripRoomPageState();
+}
+
+class _CreateTripRoomPageState extends State<CreateTripRoomPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool _isLoading = false;
+  int _daysSpent = 1; // Default to 1 day
+
+  Future<void> _createTripRoom() async {
+    if (!_formKey.currentState!.validate() || _imageFile == null) {
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        Uint8List imageBytes = await _imageFile!.readAsBytes();
+        String imageUrl = await TripRoomController.uploadImage(imageBytes);
+        await TripRoomController.createTripRoom(
+          user.uid,
+          _nameController.text,
+          imageUrl,
+          _daysSpent.toString() as int, // Pass _daysSpent as string
+        );
+        Navigator.pop(context, true); // Pass back true indicating success
+      } else {
+        throw Exception('User not logged in');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error creating trip room: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final pickedFile = await _picker.pickImage(source: source);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path); // Ensure this is the File from 'dart:io'
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Create Trip Room'),
+        backgroundColor: Color(0xFF7A9E9F),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: <Widget>[
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'Name'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a name';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              _imageFile == null
+                  ? Text('No image selected.')
+                  : Image.file(_imageFile!),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.camera_alt),
+                    onPressed: () => _pickImage(ImageSource.camera),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.photo_library),
+                    onPressed: () => _pickImage(ImageSource.gallery),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              DropdownButtonFormField<int>(
+                value: _daysSpent,
+                items: [1, 2, 3, 4, 5].map((days) {
+                  return DropdownMenuItem<int>(
+                    value: days,
+                    child: Text('$days day${days != 1 ? 's' : ''}'),
+                  );
+                }).toList(),
+                onChanged: (int? value) {
+                  setState(() {
+                    _daysSpent = value ?? 1;
+                  });
+                },
+                decoration: InputDecoration(labelText: 'Days Spent'),
+              ),
+              SizedBox(height: 20),
+              _isLoading
+                  ? CircularProgressIndicator()
+                  : ElevatedButton(
+                onPressed: _createTripRoom,
+                child: Text('Create Room'),
+                style: ElevatedButton.styleFrom(
+                  primary: Color(0xFF7A9E9F), // Match the color of other buttons
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}*/
+
+class CreateTripRoomPage extends StatefulWidget {
+  final VoidCallback? onRoomCreated; // Callback function
+
+  CreateTripRoomPage({this.onRoomCreated});
+
+  @override
+  _CreateTripRoomPageState createState() => _CreateTripRoomPageState();
+}
+
+class _CreateTripRoomPageState extends State<CreateTripRoomPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool _isLoading = false;
+  int _selectedDays = 1; // Default selected days
+
+  Future<void> _createTripRoom() async {
+    if (!_formKey.currentState!.validate() || _imageFile == null) {
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        Uint8List imageBytes = await _imageFile!.readAsBytes();
+        String imageUrl = await TripRoomController.uploadImage(imageBytes);
+        await TripRoomController.createTripRoom(
+          user.uid,
+          _nameController.text,
+          imageUrl,
+          _selectedDays,
+        );
+        Navigator.pop(context, true); // Pass back true indicating success
+      } else {
+        throw Exception('User not logged in');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error creating trip room: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final pickedFile = await _picker.pickImage(source: source);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path); // Ensure this is the File from 'dart:io'
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Create Trip Room'),
+        backgroundColor: Color(0xFF7A9E9F),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: <Widget>[
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'Name'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a name';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              _imageFile == null
+                  ? Text('No image selected.')
+                  : Image.file(_imageFile!),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.camera_alt),
+                    onPressed: () => _pickImage(ImageSource.camera),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.photo_library),
+                    onPressed: () => _pickImage(ImageSource.gallery),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              DropdownButton<int>(
+                value: _selectedDays,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedDays = value!;
+                  });
+                },
+                items: [1, 2, 3, 4, 5]
+                    .map((days) => DropdownMenuItem<int>(
+                  value: days,
+                  child: Text('$days days'),
+                ))
+                    .toList(),
+              ),
+              SizedBox(height: 20),
+              _isLoading
+                  ? CircularProgressIndicator()
+                  : ElevatedButton(
+                onPressed: _createTripRoom,
+                child: Text('Create Room'),
+                style: ElevatedButton.styleFrom(
+                  primary: Color(0xFF7A9E9F), // Match the color of other buttons
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 
 
 // -----------------------------TRIP ROOM DETAILS ------------------------------
 
+/*
 class TripRoomDetailsPage extends StatefulWidget {
   final String tripRoomId;
 
@@ -1586,6 +2408,360 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
             Text(
               _tripRoom!.name,
               style: TextStyle(fontSize: 18),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Members:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            _memberNames.isEmpty
+                ? Text('No members found')
+                : Column(
+              children: _memberNames
+                  .map(
+                    (memberName) => ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Color(0xFF7A9E9F),
+                    child: Icon(
+                      Icons.person,
+                      color: Colors.white,
+                    ),
+                  ),
+                  title: Text(memberName),
+                ),
+              )
+                  .toList(),
+            ),
+            SizedBox(height: 16),
+            TextFormField(
+              controller: _emailController,
+              decoration: InputDecoration(
+                labelText: 'Add Member by Email',
+                prefixIcon: Icon(Icons.email),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+            ),
+            SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _addMember,
+                child: Text('Add Member'),
+                style: ElevatedButton.styleFrom(
+                  primary: Color(0xFF7A9E9F),
+                  padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}*/
+
+class TripRoomDetailsPage extends StatefulWidget {
+  final String tripRoomId;
+
+  TripRoomDetailsPage({required this.tripRoomId});
+
+  @override
+  _TripRoomDetailsPageState createState() => _TripRoomDetailsPageState();
+}
+
+class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
+  final _emailController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _daysSpentController = TextEditingController();
+
+  bool _isLoading = false;
+  TripRoom? _tripRoom;
+  List<String> _memberNames = [];
+  bool _isEditingName = false;
+  bool _isEditingDaysSpent = false;
+  int? _selectedDaysSpent;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTripRoomDetails();
+    _loadMembersNames();
+  }
+
+  Future<void> _loadTripRoomDetails() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      if (widget.tripRoomId.isEmpty) {
+        throw Exception('tripRoomId is empty');
+      }
+      TripRoom tripRoom = await TripRoomController.getTripRoom(widget.tripRoomId);
+      setState(() {
+        _tripRoom = tripRoom;
+        _nameController.text = tripRoom.name;
+        _selectedDaysSpent = tripRoom.daysSpent;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading trip room details: $e')),
+      );
+    }
+  }
+
+  Future<void> _loadMembersNames() async {
+    try {
+      List<String> memberNames = await TripRoomController.getMembersNames(widget.tripRoomId);
+      setState(() {
+        _memberNames = memberNames;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading member names: $e')),
+      );
+    }
+  }
+
+  Future<void> _addMember() async {
+    if (_tripRoom == null) {
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      String email = _emailController.text.trim();
+      String? userId = await TripRoomController.getUserIdByEmail(email);
+
+      if (userId != null) {
+        await TripRoomController.addMemberToTripRoom(widget.tripRoomId, userId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Member added successfully')),
+        );
+        _loadMembersNames();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User not found')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error adding member: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+ /* Future<void> _editTripRoomDetails() async {
+    if (_tripRoom == null) {
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      if (_isEditingName) {
+        String newName = _nameController.text.trim();
+        await TripRoomController.updateTripRoomName(widget.tripRoomId, newName);
+      }
+
+      if (_isEditingDaysSpent) {
+        int newDaysSpent = _selectedDaysSpent!;
+        await TripRoomController.updateTripRoomDaysSpent(widget.tripRoomId, newDaysSpent);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Trip room details updated successfully')),
+      );
+      _loadTripRoomDetails();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating trip room details: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+        _isEditingName = false;
+        _isEditingDaysSpent = false;
+      });
+    }
+  }
+*/
+  Future<void> _editTripRoomDetails() async {
+    if (_tripRoom == null) {
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      String newName = _nameController.text.trim();
+      int? newDaysSpent;
+
+      // Check if _selectedDaysSpent is not null (meaning it was selected from dropdown)
+      if (_selectedDaysSpent != null) {
+        newDaysSpent = _selectedDaysSpent;
+      } else {
+        // If dropdown value is null, attempt to parse days spent from text field
+        String newDaysSpentText = _daysSpentController.text.trim();
+        if (newDaysSpentText.isNotEmpty) {
+          newDaysSpent = int.tryParse(newDaysSpentText);
+        }
+      }
+
+      // Update trip room details based on provided values
+      if (newName.isNotEmpty) {
+        await TripRoomController.updateTripRoomName(widget.tripRoomId, newName);
+      }
+      if (newDaysSpent != null) {
+        await TripRoomController.updateTripRoomDaysSpent(widget.tripRoomId, newDaysSpent);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Trip room details updated successfully')),
+      );
+
+      // Reload trip room details after updating
+      _loadTripRoomDetails();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating trip room details: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Trip Room Details',
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 23,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator())
+            : _tripRoom == null
+            ? Center(child: Text('Trip room details not found'))
+            : Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _isEditingName
+                    ? Expanded(
+                  child: TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Edit Trip Room Name',
+                      prefixIcon: Icon(Icons.edit),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                  ),
+                )
+                    : Expanded(
+                  child: Text(
+                    'Name: ${_tripRoom!.name}',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    _isEditingName ? Icons.check : Icons.edit,
+                    color: Color(0xFF7A9E9F),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isEditingName = !_isEditingName;
+                      if (!_isEditingName) {
+                        _editTripRoomDetails();
+                      }
+                    });
+                  },
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _isEditingDaysSpent
+                    ? Expanded(
+                  child: DropdownButtonFormField<int>(
+                    value: _selectedDaysSpent,
+                    items: [1, 2, 3, 4, 5].map((days) {
+                      return DropdownMenuItem<int>(
+                        value: days,
+                        child: Text('$days days'),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedDaysSpent = value!;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Select Days Spent',
+                      prefixIcon: Icon(Icons.calendar_today),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                  ),
+                )
+
+                    : Expanded(
+                  child: Text(
+                    'Days Spent: $_selectedDaysSpent',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    _isEditingDaysSpent ? Icons.check : Icons.edit,
+                    color: Color(0xFF7A9E9F),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isEditingDaysSpent = !_isEditingDaysSpent;
+                      if (!_isEditingDaysSpent) {
+                        _editTripRoomDetails();
+                      }
+                    });
+                  },
+                ),
+              ],
             ),
             SizedBox(height: 16),
             Text(

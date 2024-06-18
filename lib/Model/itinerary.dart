@@ -67,6 +67,7 @@ class Location {
   String? type;
   double? approximateTime;
   bool visited;
+  DateTime? endTime;
 
   Location({
     required this.id,
@@ -79,6 +80,7 @@ class Location {
     this.type,
     this.approximateTime,
     this.visited = false,
+    this.endTime,
   });
 
   factory Location.fromMap(String id, Map<String, dynamic> map) {

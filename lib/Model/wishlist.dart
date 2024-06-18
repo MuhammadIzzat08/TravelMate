@@ -2,9 +2,11 @@ class WishlistItem {
   final String tripRoomId;
   final String locationId;
 
+
   WishlistItem({
     required this.tripRoomId,
     required this.locationId,
+
   });
 
   Map<String, dynamic> toMap() {
@@ -12,6 +14,7 @@ class WishlistItem {
       'tripRoomId': tripRoomId,
       'locationId': locationId,
       'Visited': false,
+
     };
   }
 
