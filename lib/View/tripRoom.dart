@@ -1275,7 +1275,7 @@ class _TripRoomViewState extends State<TripRoomView> {
     return '${DateFormat.jm().format(startTime)} - ${DateFormat.jm().format(endTime)}';
   }
 
-  @override
+ /* @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -1419,9 +1419,8 @@ class _TripRoomViewState extends State<TripRoomView> {
         backgroundColor: Color(0xFF7A9E9F),
       ),
     );
-  }
-
-/*
+  }*/
+// KAT SINIIII THE PROBLEM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1614,7 +1613,6 @@ class _TripRoomViewState extends State<TripRoomView> {
     );
   }
 
-*/
 
 
 }
@@ -2781,7 +2779,7 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
     }
   }
 
- /* Future<void> _editTripRoomDetails() async {
+  /* Future<void> _editTripRoomDetails() async {
     if (_tripRoom == null) {
       return;
     }
