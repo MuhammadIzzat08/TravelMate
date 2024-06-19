@@ -206,10 +206,8 @@ class TripRoomController {
       throw Exception('Failed to update trip room details: $e');
     }
   }
-
-
-
-
-
 }
+
+
+
 

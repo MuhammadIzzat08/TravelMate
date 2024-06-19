@@ -367,42 +367,63 @@ class _WishlistScreenState extends State<WishlistScreen> {
         backgroundColor: Colors.white,
         iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
       ),
-      body: FutureBuilder<List<Location>>(
-        future: _wishlistItemsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No wishlist items found'));
-          } else {
-            final wishlistItems = snapshot.data!;
-            _checkIfSufficientDays(); // Check if sufficient days available
-            return ListView.builder(
-              itemCount: wishlistItems.length,
-              itemBuilder: (context, index) {
-                final item = wishlistItems[index];
-                return ListTile(
-                  title: Text(item.name ?? 'Unknown'),
-                  subtitle: Text(item.description ?? 'No description'),
-                  trailing: IconButton(
-                    icon: Icon(
-                      item.visited
-                          ? Icons.check_box // Checked
-                          : Icons.check_box_outline_blank, // Unchecked
-                      color: item.visited ? Color(0xFF7A9E9F) : Colors.grey,
-                    ),
-                    onPressed: () => _toggleVisitedStatus(item.id, item.visited),
-                  ),
-                );
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Instruction notice for marking wishlist items as visited
+          Container(
+            color: Colors.blueGrey.withOpacity(0.1),
+            padding: EdgeInsets.all(12),
+            child: Text(
+              'Tip: Tap the checkbox to mark a location as visited and exclude it from your itinerary.',
+              style: TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<Location>>(
+              future: _wishlistItemsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(child: Text('No wishlist items found'));
+                } else {
+                  final wishlistItems = snapshot.data!;
+                  _checkIfSufficientDays(); // Check if sufficient days available
+                  return ListView.builder(
+                    itemCount: wishlistItems.length,
+                    itemBuilder: (context, index) {
+                      final item = wishlistItems[index];
+                      return ListTile(
+                        title: Text(item.name ?? 'Unknown'),
+                        subtitle: Text(item.description ?? 'No description'),
+                        trailing: IconButton(
+                          icon: Icon(
+                            item.visited
+                                ? Icons.check_box // Checked
+                                : Icons.check_box_outline_blank, // Unchecked
+                            color: item.visited ? Color(0xFF7A9E9F) : Colors.grey,
+                          ),
+                          onPressed: () => _toggleVisitedStatus(item.id, item.visited),
+                        ),
+                      );
+                    },
+                  );
+                }
               },
-            );
-          }
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
+
 }
 
 
