@@ -51,7 +51,7 @@ class ItineraryScreen extends StatelessWidget {
 
 //filtered itinerary screen///////////////////////////////////////////////////
 
-class FilteredItineraryScreen extends StatefulWidget {
+/*class FilteredItineraryScreen extends StatefulWidget {
   final String tripRoomId; // Add this line to receive tripRoomId
 
   const FilteredItineraryScreen({Key? key, required this.tripRoomId}) : super(key: key);
@@ -69,7 +69,7 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
   List<String> selectedCuisineTypes = [];
   List<String> selectedPriceRates = [];
   List<String> selectedPurposes = [];
-  List<String> selectedAccessibilities = [];
+  List<String> selectedAccessabilities = [];
 
   @override
   Widget build(BuildContext context) {
@@ -148,8 +148,8 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
                         'City',
                         'Beach',
                         'History',
-                        /*'Halal',
-                        'Non-Halal'*/
+                        *//*'Halal',
+                        'Non-Halal'*//*
                       ],
                       setState,
                     ),
@@ -178,18 +178,18 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
                       setState,
                     ),
 
-                   /* SizedBox(height:30),
+                   *//* SizedBox(height:30),
                     _buildFilterCheckboxList(
                       'Purpose:',
                       selectedPurposes,
                       ['Family', 'Friend', 'Solo'],
                       setState,
-                    ),*/
+                    ),*//*
 
                     SizedBox(height:30),
                     _buildFilterCheckboxList(
                       'Accessibility:',
-                      selectedAccessibilities,
+                      selectedAccessabilities,
                       ['Child', 'Elders'],
                       setState,
                     ),
@@ -234,7 +234,7 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
       cuisineType: selectedCuisineTypes.isNotEmpty ? selectedCuisineTypes : null,
       priceRate: selectedPriceRates.isNotEmpty ? selectedPriceRates : null,
       purpose: selectedPurposes.isNotEmpty ? selectedPurposes : null,
-      accessability: selectedAccessibilities.isNotEmpty ? selectedAccessibilities : null,
+      accessability: selectedAccessabilities.isNotEmpty ? selectedAccessabilities : null,
     );
 
     setState(() {
@@ -264,7 +264,212 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
       ],
     );
   }
+}*/
+
+
+class FilteredItineraryScreen extends StatefulWidget {
+  final String tripRoomId;
+
+  const FilteredItineraryScreen({Key? key, required this.tripRoomId}) : super(key: key);
+
+  @override
+  _FilteredItineraryScreenState createState() => _FilteredItineraryScreenState();
 }
+
+class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
+  final FilteredItineraryController _controller = FilteredItineraryController();
+
+  List<LocationFilter> filteredLocations = [];
+
+  List<String> selectedPlaceTypes = [];
+  List<String> selectedCuisineTypes = [];
+  List<String> selectedPriceRates = [];
+  List<String> selectedPurposes = [];
+  List<String> selectedAccessabilities = [];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Filtered Locations',
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
+      ),
+      body: Column(
+        children: [
+          ElevatedButton(
+            onPressed: () {
+              _showFilterDialog(context);
+            },
+            child: Text('Filter Locations'),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: filteredLocations.length,
+              itemBuilder: (context, index) {
+                final location = filteredLocations[index];
+                return Card(
+                  child: ListTile(
+                    title: Text(location.name),
+                    subtitle: Text(location.description),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PlaceDetailsScreen(
+                            tripRoomId: widget.tripRoomId,
+                            location: location,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFilterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: Text('Filter Locations',
+                style: GoogleFonts.poppins(
+                  color: Color(0xFF7A9E9F),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildFilterCheckboxList(
+                      'Place Type:',
+                      selectedPlaceTypes,
+                      [
+                        'Nature',
+                        'City',
+                        'Beach',
+                        'History',
+                      ],
+                      setState,
+                    ),
+                    SizedBox(height:30),
+                    _buildFilterCheckboxList(
+                      'Cuisine Status:',
+                      selectedPlaceTypes,
+                      [
+                        'Halal',
+                        'Non-Halal'
+                      ],
+                      setState,
+                    ),
+                    SizedBox(height:30),
+                    _buildFilterCheckboxList(
+                      'Cuisine Type:',
+                      selectedCuisineTypes,
+                      ['Western', 'Malay', 'Chinese'],
+                      setState,
+                    ),
+                    SizedBox(height:30),
+                    _buildFilterCheckboxList(
+                      'Price Rate:',
+                      selectedPriceRates,
+                      ['Moderate', 'Affordable', 'Expensive'],
+                      setState,
+                    ),
+                    SizedBox(height:30),
+                    _buildFilterCheckboxList(
+                      'Accessibility:',
+                      selectedAccessabilities,
+                      ['Child', 'Elders'],
+                      setState,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('Cancel',
+                    style: GoogleFonts.poppins(
+                      color: Color(0xFF7A9E9F),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),),
+                ),
+                TextButton(
+                  onPressed: () {
+                    _applyFilters();
+                    Navigator.pop(context);
+                  },
+                  child: Text('Apply',
+                    style: GoogleFonts.poppins(
+                      color: Color(0xFF7A9E9F),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _applyFilters() async {
+    final filteredResult = await _controller.filterLocations(
+      placeType: selectedPlaceTypes.isNotEmpty ? selectedPlaceTypes : null,
+      cuisineType: selectedCuisineTypes.isNotEmpty ? selectedCuisineTypes : null,
+      priceRate: selectedPriceRates.isNotEmpty ? selectedPriceRates : null,
+      purpose: selectedPurposes.isNotEmpty ? selectedPurposes : null,
+      accessability: selectedAccessabilities.isNotEmpty ? selectedAccessabilities : null,
+    );
+
+    setState(() {
+      filteredLocations = filteredResult.cast<LocationFilter>();
+    });
+  }
+
+  Widget _buildFilterCheckboxList(String title, List<String> selectedValues, List<String> options, StateSetter setState) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title),
+        ...options.map((option) => CheckboxListTile(
+          title: Text(option),
+          value: selectedValues.contains(option),
+          onChanged: (value) {
+            setState(() {
+              if (value != null && value) {
+                selectedValues.add(option);
+              } else {
+                selectedValues.remove(option);
+              }
+            });
+          },
+        )),
+      ],
+    );
+  }
+}
+
 
 
 //-------------------------Details location Screen------------------------------

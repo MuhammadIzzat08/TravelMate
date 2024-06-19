@@ -117,7 +117,7 @@ class Location {
 
 
 // FILTERED LOCATION MODEL //
-class LocationFilter {
+/*class LocationFilter {
   final String id;
   final String description;
   final double latitude;
@@ -126,6 +126,7 @@ class LocationFilter {
   final String operatingHour;
   final String price;
   final String type;
+  final double? approximateTime;
   final String cuisine;
   final String purpose;
   final String accessability;
@@ -139,6 +140,7 @@ class LocationFilter {
     required this.operatingHour,
     required this.price,
     required this.type,
+    required this.approximateTime,
     required this.cuisine,
     required this.purpose,
     required this.accessability,
@@ -154,12 +156,68 @@ class LocationFilter {
       operatingHour: map['Operating_hour'] ?? '',
       price: map['Price'] ?? '',
       type: map['Type'] ?? '',
+      approximateTime: map['Approximate_Time']?.toDouble(),
       cuisine: map['Cuisine'] ?? '',
       purpose: map['Purpose'] ?? '',
       accessability: map['Accessability'] ?? '',
     );
   }
+}*/
+// FILTERED LOCATION MODEL //
+class LocationFilter {
+  final String id;
+  final String description;
+  final double latitude;
+  final double longitude;
+  final String name;
+  final String operatingHour;
+  final String price;
+  final String type;
+  final double? approximateTime;
+  final String cuisine;
+  final String purpose;
+  final String accessability;
+
+  LocationFilter({
+    required this.id,
+    required this.description,
+    required this.latitude,
+    required this.longitude,
+    required this.name,
+    required this.operatingHour,
+    required this.price,
+    required this.type,
+    required this.approximateTime,
+    required this.cuisine,
+    required this.purpose,
+    required this.accessability,
+  });
+
+  factory LocationFilter.fromMap(String id, Map<String, dynamic> map) {
+    return LocationFilter(
+      id: id,
+      description: map['Description'] ?? '',
+      latitude: _toDouble(map['Latitude']),
+      longitude: _toDouble(map['Longitude']),
+      name: map['Name'] ?? '',
+      operatingHour: map['Operating_hour'] ?? '',
+      price: map['Price'] ?? '',
+      type: map['Type'] ?? '',
+      approximateTime: _toDouble(map['Approximate_Time']),
+      cuisine: map['Cuisine'] ?? '',
+      purpose: map['Purpose'] ?? '',
+      accessability: map['Accessability'] ?? '',
+    );
+  }
+
+  static double _toDouble(dynamic value) {
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
 }
+
 
 //  ITINERARY MODEL  //
 class Itinerary {

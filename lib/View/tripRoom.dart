@@ -1130,7 +1130,7 @@ class _TripRoomViewState extends State<TripRoomView> {
       ),
     );
   }
-}*/ //latest
+} *///latest
 
 class TripRoomView extends StatefulWidget {
   final String tripRoomId;
@@ -1275,7 +1275,7 @@ class _TripRoomViewState extends State<TripRoomView> {
     return '${DateFormat.jm().format(startTime)} - ${DateFormat.jm().format(endTime)}';
   }
 
- /* @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -1419,8 +1419,9 @@ class _TripRoomViewState extends State<TripRoomView> {
         backgroundColor: Color(0xFF7A9E9F),
       ),
     );
-  }*/
+  }
 
+/*
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1613,6 +1614,7 @@ class _TripRoomViewState extends State<TripRoomView> {
     );
   }
 
+*/
 
 
 }
@@ -2450,20 +2452,32 @@ class _CreateTripRoomPageState extends State<CreateTripRoomPage> {
                 ],
               ),
               SizedBox(height: 20),
-              DropdownButton<int>(
-                value: _selectedDays,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedDays = value!;
-                  });
-                },
-                items: [1, 2, 3, 4, 5]
-                    .map((days) => DropdownMenuItem<int>(
-                  value: days,
-                  child: Text('$days days'),
-                ))
-                    .toList(),
+
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Please choose the duration of your trip',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  DropdownButton<int>(
+                    value: _selectedDays,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedDays = value!;
+                      });
+                    },
+                    items: [1, 2, 3, 4, 5].map((days) => DropdownMenuItem<int>(
+                      value: days,
+                      child: Text('$days days'),
+                    )).toList(),
+                  ),
+                ],
               ),
+
               SizedBox(height: 20),
               _isLoading
                   ? CircularProgressIndicator()
