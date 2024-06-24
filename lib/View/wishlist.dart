@@ -285,6 +285,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
 }*/
  //latestttt
 
+/*
 class WishlistScreen extends StatefulWidget {
   final String tripRoomId;
 
@@ -425,6 +426,146 @@ class _WishlistScreenState extends State<WishlistScreen> {
   }
 
 }
+*/
+
+class WishlistScreen extends StatefulWidget {
+  final String tripRoomId;
+
+  const WishlistScreen({Key? key, required this.tripRoomId}) : super(key: key);
+
+  @override
+  _WishlistScreenState createState() => _WishlistScreenState();
+}
+
+class _WishlistScreenState extends State<WishlistScreen> {
+  final WishlistController _wishlistController = WishlistController();
+  final ItineraryController _itineraryController = ItineraryController();
+  late Future<List<Location>> _wishlistItemsFuture;
+  late Future<int> _tripDaysFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _wishlistItemsFuture = _wishlistController.getWishlistItems(widget.tripRoomId);
+    _tripDaysFuture = _wishlistController.getTripDays(widget.tripRoomId);
+  }
+
+  void _toggleVisitedStatus(String locationId, bool currentStatus) async {
+    await _wishlistController.updateVisitedStatus(widget.tripRoomId, locationId, !currentStatus);
+    setState(() {
+      _wishlistItemsFuture = _wishlistController.getWishlistItems(widget.tripRoomId);
+    });
+  }
+
+  Future<void> _showExtendTripPopup(int days) async {
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Extend Trip Days'),
+          content: Text('You cannot visit all locations within $days days. '
+              'Consider extending your trip by changing the days spent at the room settings.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _checkIfSufficientDays() async {
+    final tripDays = await _tripDaysFuture;
+    final wishlistItems = await _wishlistItemsFuture;
+    const hoursPerDay = 13;
+    final totalAvailableHours = tripDays * hoursPerDay;
+
+    final totalTimeRequired = wishlistItems.fold<double>(0.0, (sum, item) {
+      return sum + (item.approximateTime ?? 0);
+    });
+
+    if (totalTimeRequired > totalAvailableHours) {
+      await _showExtendTripPopup(tripDays);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Wishlist',
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Instruction notice for marking wishlist items as visited
+          Container(
+            color: Colors.blueGrey.withOpacity(0.1),
+            padding: EdgeInsets.all(12),
+            child: Text(
+              'Tip: Tap the checkbox to mark a location as visited and exclude it from your itinerary.',
+              style: TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<Location>>(
+              future: _wishlistItemsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(child: Text('No wishlist items found'));
+                } else {
+                  final wishlistItems = snapshot.data!;
+                  _checkIfSufficientDays(); // Check if sufficient days available
+                  return ListView.builder(
+                    itemCount: wishlistItems.length,
+                    itemBuilder: (context, index) {
+                      final item = wishlistItems[index];
+                      return ListTile(
+                        title: Text(item.name ?? 'Unknown'),
+                        subtitle: Text(item.description ?? 'No description'),
+                        trailing: IconButton(
+                          icon: Icon(
+                            item.visited
+                                ? Icons.check_box // Checked
+                                : Icons.check_box_outline_blank, // Unchecked
+                            color: item.visited ? Color(0xFF7A9E9F) : Colors.grey,
+                          ),
+                          onPressed: () => _toggleVisitedStatus(item.id, item.visited),
+                        ),
+                      );
+                    },
+                  );
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 
 
 

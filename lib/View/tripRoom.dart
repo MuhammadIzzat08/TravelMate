@@ -1141,7 +1141,7 @@ class TripRoomView extends StatefulWidget {
   _TripRoomViewState createState() => _TripRoomViewState();
 }
 
-class _TripRoomViewState extends State<TripRoomView> {
+/*class _TripRoomViewState extends State<TripRoomView> {
   late TripRoom tripRoom;
   GoogleMapController? mapController;
   Position? _currentPosition;
@@ -1275,7 +1275,8 @@ class _TripRoomViewState extends State<TripRoomView> {
     return '${DateFormat.jm().format(startTime)} - ${DateFormat.jm().format(endTime)}';
   }
 
- /* @override
+  //Tutup siniiiii
+ *//* @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -1419,7 +1420,7 @@ class _TripRoomViewState extends State<TripRoomView> {
         backgroundColor: Color(0xFF7A9E9F),
       ),
     );
-  }*/
+  }*//*
 // KAT SINIIII THE PROBLEM
   @override
   Widget build(BuildContext context) {
@@ -1560,8 +1561,8 @@ class _TripRoomViewState extends State<TripRoomView> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(location.description ?? 'No description'),
-                                Text('Operating Hours: ${location.operatingHour ?? "N/A"}'),
-                                Text('Approximate Time: ${location.approximateTime ?? "N/A"} hours'),
+                                //Text('Operating Hours: ${location.operatingHour ?? "N/A"}'),
+                                //Text('Approximate Time: ${location.approximateTime ?? "N/A"} hours'),
                               ],
                             ),
                             trailing: IconButton(
@@ -1612,10 +1613,347 @@ class _TripRoomViewState extends State<TripRoomView> {
       ),
     );
   }
+}*/
 
+class _TripRoomViewState extends State<TripRoomView> {
+  late TripRoom tripRoom;
+  GoogleMapController? mapController;
+  Position? _currentPosition;
+  Map<int, List<Location>> _dailyItinerary = {};
+  final ItineraryController _itineraryController = ItineraryController();
 
+  static const int initialStartHour = 9; // Initial start hour for the first location
+  static const int endHour = 22; // Ending hour for the itinerary
 
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+    _fetchTripRoom().then((_) => _generateAndLoadItinerary());
+  }
+
+  Future<void> _fetchTripRoom() async {
+    try {
+      tripRoom = await TripRoomController.getTripRoom(widget.tripRoomId);
+      setState(() {});
+    } catch (e) {
+      setState(() {});
+      print('Error fetching trip room: $e');
+    }
+  }
+
+  void _getCurrentLocation() async {
+    try {
+      Position position = await _itineraryController.determinePosition();
+      setState(() {
+        _currentPosition = position;
+      });
+    } catch (e) {
+      print("Error getting current location: $e");
+    }
+  }
+
+  void _generateAndLoadItinerary() async {
+    try {
+      List<Location> itinerary = await _itineraryController.generateItinerary(widget.tripRoomId);
+      if (tripRoom.daysSpent > 0) {
+        _dailyItinerary = _splitItineraryIntoDays(itinerary, tripRoom.daysSpent);
+        setState(() {});
+      } else {
+        print('Invalid trip daysSpent');
+      }
+    } catch (e) {
+      print("Error generating itinerary: $e");
+    }
+  }
+
+  Map<int, List<Location>> _splitItineraryIntoDays(List<Location> itinerary, int daysSpent) {
+    const int hoursPerDay = endHour - initialStartHour; // Hours available each day
+    const int minutesPerDay = hoursPerDay * 60;
+    Map<int, List<Location>> dailyItinerary = {};
+
+    int currentDay = 1;
+    int remainingMinutesInDay = minutesPerDay;
+
+    for (Location location in itinerary) {
+      int approximateTimeMinutes = ((location.approximateTime ?? 2) * 60).ceil();
+
+      if (remainingMinutesInDay >= approximateTimeMinutes) {
+        // Add location to the current day
+        dailyItinerary.putIfAbsent(currentDay, () => []).add(location);
+        remainingMinutesInDay -= approximateTimeMinutes;
+      } else {
+        // Move to the next day
+        currentDay++;
+        if (currentDay > daysSpent) {
+          break; // We've exhausted the number of days
+        }
+        remainingMinutesInDay = minutesPerDay - approximateTimeMinutes;
+        dailyItinerary.putIfAbsent(currentDay, () => []).add(location);
+      }
+    }
+    return dailyItinerary;
+  }
+
+  void _showWarningDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('ADVICE'),
+          content: Text('Your itinerary includes a significant number of locations.'
+              ' Please be aware that completing this itinerary may require more than one day.'),
+          actions: [
+            TextButton(
+              child: Text(
+                'Noted',
+                style: GoogleFonts.poppins(
+                  color: Color(0xFF7A9E9F),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+  }
+
+  Set<Marker> _createMarkers() {
+    return _dailyItinerary.values.expand((dayLocations) {
+      return dayLocations.map((location) {
+        if (location.latitude != null && location.longitude != null) {
+          return Marker(
+            markerId: MarkerId(location.id),
+            position: LatLng(location.latitude!, location.longitude!),
+            infoWindow: InfoWindow(
+              title: location.name ?? 'Unknown',
+              snippet: location.description ?? 'No description',
+            ),
+            icon: location.visited
+                ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)
+                : BitmapDescriptor.defaultMarker,
+          );
+        }
+        return null;
+      }).whereType<Marker>().toSet();
+    }).toSet();
+  }
+
+  String _formatTimeRange(DateTime startTime, DateTime endTime) {
+    return '${DateFormat.jm().format(startTime)} - ${DateFormat.jm().format(endTime)}';
+  }
+
+  void _toggleLocationVisited(Location location) {
+    setState(() {
+      location.visited = !location.visited;
+    });
+    _refreshMapMarkers();
+  }
+
+  void _refreshMapMarkers() {
+    setState(() {}); // Force the UI to refresh
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          tripRoom.name,
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 25,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.favorite, color: Color(0xFF7A9E9F)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => WishlistScreen(tripRoomId: widget.tripRoomId),
+                ),
+              ).then((_) => _generateAndLoadItinerary());
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 5,
+            child: _currentPosition != null
+                ? GoogleMap(
+              onMapCreated: _onMapCreated,
+              initialCameraPosition: CameraPosition(
+                target: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                zoom: 12,
+              ),
+              markers: _createMarkers(),
+            )
+                : Center(child: CircularProgressIndicator()),
+          ),
+          Expanded(
+            flex: 5,
+            child: Container(
+              color: Colors.white.withOpacity(0.85),
+              padding: EdgeInsets.all(16),
+              child: _dailyItinerary.isEmpty
+                  ? Center(
+                child: Text(
+                  'No itinerary found. Add locations to your wishlist by click  + button to generate an itinerary.',
+                  style: TextStyle(fontSize: 18),
+                  textAlign: TextAlign.center,
+                ),
+              )
+                  : ListView.builder(
+                itemCount: _dailyItinerary.length,
+                itemBuilder: (context, dayIndex) {
+                  int day = dayIndex + 1;
+                  List<Location> locations = _dailyItinerary[day] ?? [];
+                  return ExpansionTile(
+                    title: Text(
+                      'Day $day',
+                      style: GoogleFonts.sourceSerifPro(
+                        color: Color(0xFF7A9E9F),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 25,
+                      ),
+                    ),
+                    children: locations.map((location) {
+                      var approximateTimeMinutes = ((location.approximateTime ?? 2) * 60).ceil();
+
+                      // Determine the start time for the current location
+                      DateTime startTime;
+                      if (locations.indexOf(location) == 0) {
+                        // If it's the first location of the day, use the start hour based on operating hour
+                        if (location.operatingHour == 'Dinner') {
+                          // Check if the previous location's end time allows for a valid dinner start time
+                          var previousEndTime = locations.isEmpty ? null : locations.last.endTime;
+                          if (previousEndTime != null && previousEndTime.hour >= 20 && previousEndTime.hour < 24) {
+                            // If the previous end time is within dinner time range, start at that time
+                            startTime = previousEndTime;
+                          } else {
+                            // Otherwise, start at 8 PM for dinner
+                            startTime = DateTime(
+                              DateTime.now().year,
+                              DateTime.now().month,
+                              DateTime.now().day + (day - 1),
+                              20, // Dinner starts at 8 PM
+                            );
+                          }
+                        } else if (location.operatingHour == 'Lunch') {
+                          startTime = DateTime(
+                            DateTime.now().year,
+                            DateTime.now().month,
+                            DateTime.now().day + (day - 1),
+                            12, // Lunch starts at 12 PM
+                          );
+                        } else {
+                          startTime = DateTime(
+                            DateTime.now().year,
+                            DateTime.now().month,
+                            DateTime.now().day + (day - 1),
+                            initialStartHour, // Default initial start hour
+                          );
+                        }
+                      } else {
+                        // Use the end time of the previous location
+                        var previousEndTime = locations[locations.indexOf(location) - 1].endTime;
+                        startTime = previousEndTime ?? DateTime.now();
+                      }
+
+                      // Calculate the end time for the current location
+                      var endTime = startTime.add(Duration(minutes: approximateTimeMinutes));
+
+                      // Save the end time back to the location object
+                      location.endTime = endTime;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _formatTimeRange(startTime, endTime),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          ListTile(
+                            title: Text(
+                              location.name ?? 'Unknown',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(location.description ?? 'No description'),
+                              ],
+                            ),
+                            trailing: IconButton(
+                              icon: location.visited
+                                  ? Icon(Icons.check, color: Color(0xFF7A9E9F))
+                                  : Icon(Icons.check_box_outline_blank),
+                              onPressed: () {
+                                _toggleLocationVisited(location);
+                              },
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                        ],
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            ),
+          ),
+          // Instruction notice for marking locations as visited
+          Container(
+            color: Colors.blueGrey.withOpacity(0.1),
+            padding: EdgeInsets.all(12),
+            child: Text(
+              'Tip: To mark a location as visited, tap the checkbox icon next to the location name.',
+              style: TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FilteredItineraryScreen(tripRoomId: widget.tripRoomId),
+            ),
+          );
+        },
+        child: Icon(Icons.add_location),
+        backgroundColor: Color(0xFF7A9E9F),
+      ),
+    );
+  }
 }
+
+
 
 
 

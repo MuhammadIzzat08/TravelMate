@@ -56,6 +56,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
   }
 }*/
 
+/*
 class Location {
   String id;
   String? description;
@@ -112,6 +113,67 @@ class Location {
     };
   }
 }
+*/ //latest
+
+class Location {
+  String id;
+  String? description;
+  double? latitude;
+  double? longitude;
+  String? name;
+  String? operatingHour;
+  String? price;
+  String? type;
+  double? approximateTime;
+  bool visited;
+  DateTime? endTime;
+
+  Location({
+    required this.id,
+    this.description,
+    this.latitude,
+    this.longitude,
+    this.name,
+    this.operatingHour,
+    this.price,
+    this.type,
+    this.approximateTime,
+    this.visited = false,
+    this.endTime,
+  });
+
+  factory Location.fromMap(String id, Map<String, dynamic> map) {
+    return Location(
+      id: id,
+      description: map['Description'],
+      latitude: map['Latitude'],
+      longitude: map['Longitude'],
+      name: map['Name'],
+      operatingHour: map['Operating_hour'],
+      price: map['Price'],
+      type: map['Type'],
+      approximateTime: (map['Approximate_Time'] is String)
+          ? double.tryParse(map['Approximate_Time']) ?? 0.0
+          : map['Approximate_Time']?.toDouble(),
+      visited: map['Visited'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'Description': description,
+      'Latitude': latitude,
+      'Longitude': longitude,
+      'Name': name,
+      'Operating_hour': operatingHour,
+      'Price': price,
+      'Type': type,
+      'Approximate_Time': approximateTime,
+      'Visited': visited,
+    };
+  }
+}
+
 
 
 
