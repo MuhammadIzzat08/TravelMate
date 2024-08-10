@@ -88,6 +88,7 @@ class _LoginPageState extends State<LoginPage> {
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:travelmate/View/forgotPassword.dart';
 import 'package:travelmate/View/registration.dart';
 import 'package:travelmate/View/tripRoom.dart';
 
@@ -211,6 +212,25 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
+
+                        SizedBox(height: 10,),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => ForgotPasswordPage()),
+                            );
+                          },
+                          child: Text('Forgot Password?'),
+                          style: ButtonStyle(
+                            foregroundColor: MaterialStateProperty.all<Color>(Color(0xFF7A9E9F)),
+                            textStyle: MaterialStateProperty.all<TextStyle>(
+                              TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+
+
                         SizedBox(height: 10),
                         TextButton(
                           onPressed: () {

@@ -23,6 +23,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 import 'package:intl/intl.dart';
+import 'package:travelmate/View/setting.dart';
 
 
 //-------------------------display trip room main page--------------------------
@@ -2038,7 +2039,7 @@ class _TripRoomListViewState extends State<TripRoomListView> {
   Widget build(BuildContext context) {
     List<Widget> _pages = [
       _buildTripRoomsPage(),
-      //SettingsPage(), // Your settings page
+      SettingsPage(), // Your settings page
     ];
 
     return Scaffold(
