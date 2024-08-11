@@ -2431,261 +2431,7 @@ class _MainPage2State extends State<MainPage2> {
   }
 }
 
-//----------------------CREATE TRIP ROOM!!!!!!----------------------------------
-
-/*
-class CreateTripRoomPage extends StatefulWidget {
-  final VoidCallback? onRoomCreated; // Callback function
-
-  CreateTripRoomPage({this.onRoomCreated});
-
-  @override
-  _CreateTripRoomPageState createState() => _CreateTripRoomPageState();
-}
-
-class _CreateTripRoomPageState extends State<CreateTripRoomPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  File? _imageFile;
-  final ImagePicker _picker = ImagePicker();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool _isLoading = false;
-
-  Future<void> _createTripRoom() async {
-    if (!_formKey.currentState!.validate() || _imageFile == null) {
-      return;
-    }
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      User? user = _auth.currentUser;
-      if (user != null) {
-        Uint8List imageBytes = await _imageFile!.readAsBytes();
-        String imageUrl = await TripRoomController.uploadImage(imageBytes);
-        await TripRoomController.createTripRoom(
-          user.uid,
-          _nameController.text,
-          imageUrl,
-        );
-        Navigator.pop(context, true); // Pass back true indicating success
-      } else {
-        throw Exception('User not logged in');
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating trip room: $e')),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _pickImage(ImageSource source) async {
-    final pickedFile = await _picker.pickImage(source: source);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path); // Ensure this is the File from 'dart:io'
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Create Trip Room'),
-        backgroundColor: Color(0xFF7A9E9F),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: <Widget>[
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(labelText: 'Name'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 20),
-              _imageFile == null
-                  ? Text('No image selected.')
-                  : Image.file(_imageFile!),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.camera_alt),
-                    onPressed: () => _pickImage(ImageSource.camera),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.photo_library),
-                    onPressed: () => _pickImage(ImageSource.gallery),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-              _isLoading
-                  ? CircularProgressIndicator()
-                  : ElevatedButton(
-                onPressed: _createTripRoom,
-                child: Text('Create Room'),
-                style: ElevatedButton.styleFrom(
-                  primary: Color(0xFF7A9E9F), // Match the color of other buttons
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-*/
-
-/*class CreateTripRoomPage extends StatefulWidget {
-  final VoidCallback? onRoomCreated; // Callback function
-
-  CreateTripRoomPage({this.onRoomCreated});
-
-  @override
-  _CreateTripRoomPageState createState() => _CreateTripRoomPageState();
-}
-
-class _CreateTripRoomPageState extends State<CreateTripRoomPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  File? _imageFile;
-  final ImagePicker _picker = ImagePicker();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool _isLoading = false;
-  int _daysSpent = 1; // Default to 1 day
-
-  Future<void> _createTripRoom() async {
-    if (!_formKey.currentState!.validate() || _imageFile == null) {
-      return;
-    }
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      User? user = _auth.currentUser;
-      if (user != null) {
-        Uint8List imageBytes = await _imageFile!.readAsBytes();
-        String imageUrl = await TripRoomController.uploadImage(imageBytes);
-        await TripRoomController.createTripRoom(
-          user.uid,
-          _nameController.text,
-          imageUrl,
-          _daysSpent.toString() as int, // Pass _daysSpent as string
-        );
-        Navigator.pop(context, true); // Pass back true indicating success
-      } else {
-        throw Exception('User not logged in');
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating trip room: $e')),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _pickImage(ImageSource source) async {
-    final pickedFile = await _picker.pickImage(source: source);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path); // Ensure this is the File from 'dart:io'
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Create Trip Room'),
-        backgroundColor: Color(0xFF7A9E9F),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: <Widget>[
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(labelText: 'Name'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 20),
-              _imageFile == null
-                  ? Text('No image selected.')
-                  : Image.file(_imageFile!),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.camera_alt),
-                    onPressed: () => _pickImage(ImageSource.camera),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.photo_library),
-                    onPressed: () => _pickImage(ImageSource.gallery),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-              DropdownButtonFormField<int>(
-                value: _daysSpent,
-                items: [1, 2, 3, 4, 5].map((days) {
-                  return DropdownMenuItem<int>(
-                    value: days,
-                    child: Text('$days day${days != 1 ? 's' : ''}'),
-                  );
-                }).toList(),
-                onChanged: (int? value) {
-                  setState(() {
-                    _daysSpent = value ?? 1;
-                  });
-                },
-                decoration: InputDecoration(labelText: 'Days Spent'),
-              ),
-              SizedBox(height: 20),
-              _isLoading
-                  ? CircularProgressIndicator()
-                  : ElevatedButton(
-                onPressed: _createTripRoom,
-                child: Text('Create Room'),
-                style: ElevatedButton.styleFrom(
-                  primary: Color(0xFF7A9E9F), // Match the color of other buttons
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}*/
+//----------------------CREATE TRIP ROOM!!!!!!---------------------------------
 
 class CreateTripRoomPage extends StatefulWidget {
   final VoidCallback? onRoomCreated; // Callback function
@@ -2837,187 +2583,7 @@ class _CreateTripRoomPageState extends State<CreateTripRoomPage> {
 
 // -----------------------------TRIP ROOM DETAILS ------------------------------
 
-/*
-class TripRoomDetailsPage extends StatefulWidget {
-  final String tripRoomId;
 
-  TripRoomDetailsPage({required this.tripRoomId});
-
-  @override
-  _TripRoomDetailsPageState createState() => _TripRoomDetailsPageState();
-}
-
-class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
-  final _emailController = TextEditingController();
-  bool _isLoading = false;
-  TripRoom? _tripRoom;
-  List<String> _memberNames = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadTripRoomDetails();
-    _loadMembersNames();
-  }
-
-  Future<void> _loadTripRoomDetails() async {
-    setState(() {
-      _isLoading = true;
-    });
-    try {
-      if (widget.tripRoomId.isEmpty) {
-        throw Exception('tripRoomId is empty');
-      }
-      TripRoom tripRoom = await TripRoomController.getTripRoom(widget.tripRoomId);
-      setState(() {
-        _tripRoom = tripRoom;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading trip room details: $e')),
-      );
-    }
-  }
-
-  Future<void> _loadMembersNames() async {
-    try {
-      List<String> memberNames = await TripRoomController.getMembersNames(widget.tripRoomId);
-      setState(() {
-        _memberNames = memberNames;
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading member names: $e')),
-      );
-    }
-  }
-
-  Future<void> _addMember() async {
-    if (_tripRoom == null) {
-      return;
-    }
-    setState(() {
-      _isLoading = true;
-    });
-    try {
-      String email = _emailController.text.trim();
-      String? userId = await TripRoomController.getUserIdByEmail(email);
-
-      if (userId != null) {
-        await TripRoomController.addMemberToTripRoom(widget.tripRoomId, userId);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Member added successfully')),
-        );
-        _loadMembersNames(); // Reload member names after adding a member
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('User not found')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error adding member: $e')),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Trip Room Details',
-          style: GoogleFonts.poppins(
-            color: Color(0xFF7A9E9F),
-            fontWeight: FontWeight.bold,
-            fontSize: 23,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: _isLoading
-            ? Center(child: CircularProgressIndicator())
-            : _tripRoom == null
-            ? Center(child: Text('Trip room details not found'))
-            : Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              'Trip Room Name:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(
-              _tripRoom!.name,
-              style: TextStyle(fontSize: 18),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Members:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            _memberNames.isEmpty
-                ? Text('No members found')
-                : Column(
-              children: _memberNames
-                  .map(
-                    (memberName) => ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Color(0xFF7A9E9F),
-                    child: Icon(
-                      Icons.person,
-                      color: Colors.white,
-                    ),
-                  ),
-                  title: Text(memberName),
-                ),
-              )
-                  .toList(),
-            ),
-            SizedBox(height: 16),
-            TextFormField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: 'Add Member by Email',
-                prefixIcon: Icon(Icons.email),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-            ),
-            SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _addMember,
-                child: Text('Add Member'),
-                style: ElevatedButton.styleFrom(
-                  primary: Color(0xFF7A9E9F),
-                  padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}*/
 
 class TripRoomDetailsPage extends StatefulWidget {
   final String tripRoomId;
@@ -3118,41 +2684,7 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
     }
   }
 
-  /* Future<void> _editTripRoomDetails() async {
-    if (_tripRoom == null) {
-      return;
-    }
-    setState(() {
-      _isLoading = true;
-    });
-    try {
-      if (_isEditingName) {
-        String newName = _nameController.text.trim();
-        await TripRoomController.updateTripRoomName(widget.tripRoomId, newName);
-      }
 
-      if (_isEditingDaysSpent) {
-        int newDaysSpent = _selectedDaysSpent!;
-        await TripRoomController.updateTripRoomDaysSpent(widget.tripRoomId, newDaysSpent);
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Trip room details updated successfully')),
-      );
-      _loadTripRoomDetails();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating trip room details: $e')),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-        _isEditingName = false;
-        _isEditingDaysSpent = false;
-      });
-    }
-  }
-*/
   Future<void> _editTripRoomDetails() async {
     if (_tripRoom == null) {
       return;
@@ -3200,11 +2732,58 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
     }
   }
 
+  void _showFullSizeImage(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop(); // Close the dialog when the image is tapped again
+                  },
+                  child: Image.network(
+                    _tripRoom!.profilePicture,
+                    fit: BoxFit.cover,
+                    height: MediaQuery.of(context).size.height * 0.5,
+                    width: MediaQuery.of(context).size.width * 0.9,
+                  ),
+                ),
+              ],
+            ),
+            Positioned(
+              bottom: 16.0,
+              right: 16.0,
+              child: FloatingActionButton(
+                onPressed: () async {
+                  await TripRoomController.changeProfilePicture(widget.tripRoomId);
+                  setState(() {
+                    _loadTripRoomDetails(); // Reload the trip room details to update the image
+                  });
+                },
+                child: Icon(Icons.edit, color: Colors.white),
+                backgroundColor: Color(0xFF7A9E9F),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+
+
 
 
 
   @override
-  Widget build(BuildContext context) {
+/*  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -3370,5 +2949,220 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
         ),
       ),
     );
+  }*/
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Trip Room Details',
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 23,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator())
+            : _tripRoom == null
+            ? Center(child: Text('Trip room details not found'))
+            : Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Center(
+              child: Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  GestureDetector(
+                    onTap: () => _showFullSizeImage(context),
+                    child: CircleAvatar(
+                      radius: 90,
+                      backgroundImage: NetworkImage(_tripRoom!.profilePicture),
+                      backgroundColor: Colors.grey[200],
+                      onBackgroundImageError: (_, __) => Icon(
+                        Icons.person,
+                        size: 50,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  FloatingActionButton(
+                    onPressed: () async {
+                      await TripRoomController.changeProfilePicture(widget.tripRoomId);
+                      setState(() {
+                        _loadTripRoomDetails(); // Reload the trip room details to update the image
+                      });
+                    },
+                    mini: true,
+                    child: Icon(Icons.edit, color: Colors.white),
+                    backgroundColor: Color(0xFF7A9E9F),
+                  ),
+                ],
+              ),
+            ),
+
+
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _isEditingName
+                    ? Expanded(
+                  child: TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Edit Trip Room Name',
+                      prefixIcon: Icon(Icons.edit),
+                      border: OutlineInputBorder(
+                        borderRadius:
+                        BorderRadius.circular(8.0),
+                      ),
+                    ),
+                  ),
+                )
+                    : Expanded(
+                  child: Text(
+                    'Name: ${_tripRoom!.name}',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    _isEditingName ? Icons.check : Icons.edit,
+                    color: Color(0xFF7A9E9F),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isEditingName = !_isEditingName;
+                      if (!_isEditingName) {
+                        _editTripRoomDetails();
+                      }
+                    });
+                  },
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _isEditingDaysSpent
+                    ? Expanded(
+                  child: DropdownButtonFormField<int>(
+                    value: _selectedDaysSpent,
+                    items: [1, 2, 3, 4, 5].map((days) {
+                      return DropdownMenuItem<int>(
+                        value: days,
+                        child: Text('$days days'),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedDaysSpent = value!;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Select Days Spent',
+                      prefixIcon:
+                      Icon(Icons.calendar_today),
+                      border: OutlineInputBorder(
+                        borderRadius:
+                        BorderRadius.circular(8.0),
+                      ),
+                    ),
+                  ),
+                )
+                    : Expanded(
+                  child: Text(
+                    'Days Spent: $_selectedDaysSpent',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    _isEditingDaysSpent
+                        ? Icons.check
+                        : Icons.edit,
+                    color: Color(0xFF7A9E9F),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isEditingDaysSpent =
+                      !_isEditingDaysSpent;
+                      if (!_isEditingDaysSpent) {
+                        _editTripRoomDetails();
+                      }
+                    });
+                  },
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Members:',
+              style:
+              TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            _memberNames.isEmpty
+                ? Text('No members found')
+                : Column(
+              children: _memberNames
+                  .map(
+                    (memberName) => ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor:
+                    Color(0xFF7A9E9F),
+                    child: Icon(
+                      Icons.person,
+                      color: Colors.white,
+                    ),
+                  ),
+                  title: Text(memberName),
+                ),
+              )
+                  .toList(),
+            ),
+            SizedBox(height: 16),
+            TextFormField(
+              controller: _emailController,
+              decoration: InputDecoration(
+                labelText: 'Add Member by Email',
+                prefixIcon: Icon(Icons.email),
+                border: OutlineInputBorder(
+                  borderRadius:
+                  BorderRadius.circular(8.0),
+                ),
+              ),
+            ),
+            SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _addMember,
+                child: Text('Add Member'),
+                style: ElevatedButton.styleFrom(
+                  primary: Color(0xFF7A9E9F),
+                  padding: EdgeInsets.symmetric(
+                      vertical: 12.0, horizontal: 24.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                    BorderRadius.circular(8.0),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
+
+

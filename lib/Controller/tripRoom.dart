@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:travelmate/Model/itinerary.dart';
 import '../Model/tripRoom.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,51 @@ import 'package:flutter/material.dart';
 
 class TripRoomController {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+
+  static Future<void> updateProfilePicture(String tripRoomId, String newProfilePictureUrl) async {
+    try {
+      await _firestore.collection('tripRooms').doc(tripRoomId).update({
+        'profilePicture': newProfilePictureUrl,
+      });
+    } catch (e) {
+      throw Exception('Failed to update profile picture: $e');
+    }
+  }
+
+  static Future<String> uploadImageAndGetUrl(File image) async {
+    try {
+      // Create a unique file name for the image
+      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+
+      // Get a reference to Firebase Storage
+      Reference storageRef = FirebaseStorage.instance
+          .ref()
+          .child('tripRooms')
+          .child(fileName);
+
+      // Upload the file to Firebase Storage
+      UploadTask uploadTask = storageRef.putFile(image);
+
+      // Wait for the upload to complete and get the download URL
+      TaskSnapshot snapshot = await uploadTask.whenComplete(() {});
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+
+      return downloadUrl;
+    } catch (e) {
+      throw Exception('Failed to upload image: $e');
+    }
+  }
+
+  static Future<void> changeProfilePicture(String tripRoomId) async {
+    final ImagePicker _picker = ImagePicker();
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      String newProfilePictureUrl = await uploadImageAndGetUrl(File(image.path));
+      await updateProfilePicture(tripRoomId, newProfilePictureUrl);
+    }
+  }
 
   Future<String> fetchTripRoomName(String tripRoomId) async {
     try {

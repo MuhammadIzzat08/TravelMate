@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:travelmate/Controller/userProfile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:travelmate/Model/userProfile.dart';
@@ -41,7 +42,16 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('User Profile'),
+        title: Text('User Profile',
+          style: GoogleFonts.sourceSerif4(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 30,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
+        elevation: 1,
       ),
       body: FutureBuilder<UserProfile>(
         future: _userProfileFuture,
@@ -73,9 +83,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     TextFormField(
                       initialValue: _userProfile.gender,
                       decoration: InputDecoration(labelText: 'Gender'),
-                      onSaved: (value) {
+                      /*onSaved: (value) {
                         _userProfile.gender = value!;
-                      },
+                      },*/
+                      readOnly: true,
                     ),
                     TextFormField(
                       initialValue: _userProfile.phoneNum,
@@ -87,8 +98,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: () => _updateUserProfile(_userProfile),
+                      style: ElevatedButton.styleFrom(
+                        primary: Color(0xFF7A9E9F),
+                        onPrimary: Colors.white,
+                        minimumSize: Size(double.infinity, 45),
+                      ),
                       child: Text('Update Profile'),
                     ),
+
                   ],
                 ),
               ),
