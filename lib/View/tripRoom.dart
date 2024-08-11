@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:travelmate/Controller/expense.dart';
+import 'package:travelmate/View/photobook.dart';
 import 'package:travelmate/authservice.dart'; // Import your authentication service
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -2363,7 +2364,6 @@ class MainPage2 extends StatefulWidget {
   @override
   _MainPage2State createState() => _MainPage2State();
 }
-
 class _MainPage2State extends State<MainPage2> {
   int _currentIndex = 0;
   late String _loggedInUserId;
@@ -2392,9 +2392,12 @@ class _MainPage2State extends State<MainPage2> {
     return Scaffold(
       body: _getBody(), // Use a function to determine which page to display
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
         selectedItemColor: Color(0xFF7A9E9F),
+        unselectedItemColor: Colors.grey,
+
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
@@ -2403,6 +2406,10 @@ class _MainPage2State extends State<MainPage2> {
           BottomNavigationBarItem(
             icon: Icon(Icons.account_balance_wallet),
             label: 'Expenses',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.photo_album),
+            label: 'Photobook',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
@@ -2423,6 +2430,8 @@ class _MainPage2State extends State<MainPage2> {
         case 1:
           return UnifiedExpenseView(tripRoomId: widget.tripRoomId, loggedInUserId: _loggedInUserId); // Pass the logged-in user ID to UnifiedExpenseView
         case 2:
+          return PhotoBookView(tripRoomId: widget.tripRoomId); // Navigate to Photobook
+        case 3:
           return TripRoomDetailsPage(tripRoomId: widget.tripRoomId); // Settings page
         default:
           return Container();
@@ -2430,6 +2439,7 @@ class _MainPage2State extends State<MainPage2> {
     }
   }
 }
+
 
 //----------------------CREATE TRIP ROOM!!!!!!---------------------------------
 
