@@ -146,13 +146,23 @@ class TripRoomController {
 
 
   static Future<void> createTripRoom(
-      String userId, String name, String profilePicture, int daysSpent) async {
+      String userId,
+      String name,
+      String profilePicture,
+      int daysSpent,
+      double budget, // New parameter
+      int numberOfPersons, // New parameter
+      int mealsPerDay, // New parameter
+      ) async {
     try {
       DocumentReference tripRoomRef = await _firestore.collection('tripRooms').add({
         'name': name,
         'profilePicture': profilePicture,
         'CreatedDate': FieldValue.serverTimestamp(),
         'daysSpent': daysSpent,
+        'budget': budget, // New field
+        'numberOfPersons': numberOfPersons, // New field
+        'mealsPerDay': mealsPerDay, // New field
       });
 
       await _firestore.collection('UserTripRoom').add({
@@ -241,6 +251,41 @@ class TripRoomController {
       throw Exception('Failed to update daysSpent: $e');
     }
   }
+
+
+  static Future<void> updateTripRoomBudget(String tripRoomId, double budget) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('tripRooms')
+          .doc(tripRoomId)
+          .update({'budget': budget});
+    } catch (e) {
+      throw Exception('Error updating budget: $e');
+    }
+  }
+
+  static Future<void> updateTripRoomNumberOfPersons(String tripRoomId, int numberOfPeople) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('tripRooms')
+          .doc(tripRoomId)
+          .update({'numberOfPeople': numberOfPeople});
+    } catch (e) {
+      throw Exception('Error updating number of people: $e');
+    }
+  }
+
+  static Future<void> updateTripRoomMealsPerDay(String tripRoomId, int mealsPerDay) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('tripRooms')
+          .doc(tripRoomId)
+          .update({'mealsPerDay': mealsPerDay});
+    } catch (e) {
+      throw Exception('Error updating meals per day: $e');
+    }
+  }
+
 
   static Future<void> updateTripRoomDetails(String tripRoomId, String newName, int newDaysSpent) async {
     try {

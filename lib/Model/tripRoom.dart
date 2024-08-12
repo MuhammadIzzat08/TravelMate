@@ -6,6 +6,9 @@ class TripRoom {
   final String profilePicture;
   final DateTime CreatedDate;
   final int daysSpent;
+  final double budget; // New field
+  final int numberOfPersons; // New field
+  final int mealsPerDay; // New field
 
   TripRoom({
     required this.id,
@@ -13,6 +16,9 @@ class TripRoom {
     required this.profilePicture,
     required this.CreatedDate,
     required this.daysSpent,
+    required this.budget, // New field
+    required this.numberOfPersons, // New field
+    required this.mealsPerDay, // New field
   });
 
   factory TripRoom.fromMap(Map<String, dynamic> map, String id) {
@@ -20,8 +26,11 @@ class TripRoom {
       id: id,
       name: map['name'],
       profilePicture: map['profilePicture'],
-      CreatedDate:(map['CreatedDate'] as Timestamp).toDate(),
+      CreatedDate: (map['CreatedDate'] as Timestamp).toDate(),
       daysSpent: map['daysSpent'] ?? 1,
+      budget: map['budget'] ?? 0.0, // New field
+      numberOfPersons: map['numberOfPersons'] ?? 1, // New field
+      mealsPerDay: map['mealsPerDay'] ?? 3, // New field
     );
   }
 
@@ -31,9 +40,13 @@ class TripRoom {
       'profilePicture': profilePicture,
       'CreatedDate': CreatedDate,
       'daysSpent': daysSpent,
+      'budget': budget, // New field
+      'numberOfPersons': numberOfPersons, // New field
+      'mealsPerDay': mealsPerDay, // New field
     };
   }
 }
+
 
 // User Trip Room model
 class UserTripRoom {

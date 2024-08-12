@@ -864,7 +864,7 @@ class _MainPage2State extends State<MainPage2> {
 
 //----------------------CREATE TRIP ROOM!!!!!!---------------------------------
 
-class CreateTripRoomPage extends StatefulWidget {
+/*class CreateTripRoomPage extends StatefulWidget {
   final VoidCallback? onRoomCreated; // Callback function
 
   CreateTripRoomPage({this.onRoomCreated});
@@ -1008,6 +1008,208 @@ class _CreateTripRoomPageState extends State<CreateTripRoomPage> {
       ),
     );
   }
+}*/
+class CreateTripRoomPage extends StatefulWidget {
+  final VoidCallback? onRoomCreated; // Callback function
+
+  CreateTripRoomPage({this.onRoomCreated});
+
+  @override
+  _CreateTripRoomPageState createState() => _CreateTripRoomPageState();
+}
+
+class _CreateTripRoomPageState extends State<CreateTripRoomPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _budgetController = TextEditingController(); // New controller
+  final _personsController = TextEditingController(); // New controller
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool _isLoading = false;
+  int _selectedDays = 1; // Default selected days
+  int _selectedMealsPerDay = 3; // Default selected meals per day
+
+  Future<void> _createTripRoom() async {
+    if (!_formKey.currentState!.validate() || _imageFile == null) {
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        Uint8List imageBytes = await _imageFile!.readAsBytes();
+        String imageUrl = await TripRoomController.uploadImage(imageBytes);
+        await TripRoomController.createTripRoom(
+          user.uid,
+          _nameController.text,
+          imageUrl,
+          _selectedDays,
+          double.parse(_budgetController.text), // New field
+          int.parse(_personsController.text), // New field
+          _selectedMealsPerDay, // New field
+        );
+        Navigator.pop(context, true); // Pass back true indicating success
+      } else {
+        throw Exception('User not logged in');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error creating trip room: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final pickedFile = await _picker.pickImage(source: source);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path); // Ensure this is the File from 'dart:io'
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Create Trip Room'),
+        backgroundColor: Color(0xFF7A9E9F),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView( // Added to handle scrolling
+            child: Column(
+              children: <Widget>[
+                TextFormField(
+                  controller: _nameController,
+                  decoration: InputDecoration(labelText: 'Name'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a name';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 20),
+                TextFormField(
+                  controller: _budgetController, // New field
+                  decoration: InputDecoration(labelText: 'Budget (RM)'),
+                  keyboardType: TextInputType.number, // Ensure only numbers can be entered
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a budget';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 20),
+                TextFormField(
+                  controller: _personsController, // New field
+                  decoration: InputDecoration(labelText: 'Number of Persons'),
+                  keyboardType: TextInputType.number, // Ensure only numbers can be entered
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter the number of persons';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 20),
+                _imageFile == null
+                    ? Text('No image selected.')
+                    : Image.file(_imageFile!),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.camera_alt),
+                      onPressed: () => _pickImage(ImageSource.camera),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.photo_library),
+                      onPressed: () => _pickImage(ImageSource.gallery),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Please choose the duration of your trip',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    DropdownButton<int>(
+                      value: _selectedDays,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedDays = value!;
+                        });
+                      },
+                      items: [1, 2, 3, 4, 5].map((days) => DropdownMenuItem<int>(
+                        value: days,
+                        child: Text('$days days'),
+                      )).toList(),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'How many meals per day?',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    DropdownButton<int>(
+                      value: _selectedMealsPerDay,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedMealsPerDay = value!;
+                        });
+                      },
+                      items: [1, 2, 3, 4, 5].map((meals) => DropdownMenuItem<int>(
+                        value: meals,
+                        child: Text('$meals meals'),
+                      )).toList(),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 20),
+                _isLoading
+                    ? CircularProgressIndicator()
+                    : ElevatedButton(
+                  onPressed: _createTripRoom,
+                  child: Text('Create Room'),
+                  style: ElevatedButton.styleFrom(
+                    primary: Color(0xFF7A9E9F), // Match the color of other buttons
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 
@@ -1016,7 +1218,7 @@ class _CreateTripRoomPageState extends State<CreateTripRoomPage> {
 
 
 
-class TripRoomDetailsPage extends StatefulWidget {
+/*class TripRoomDetailsPage extends StatefulWidget {
   final String tripRoomId;
 
   TripRoomDetailsPage({required this.tripRoomId});
@@ -1206,181 +1408,6 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
       ),
     );
   }
-
-
-
-
-
-
-
-  @override
-/*  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Trip Room Details',
-          style: GoogleFonts.poppins(
-            color: Color(0xFF7A9E9F),
-            fontWeight: FontWeight.bold,
-            fontSize: 23,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: _isLoading
-            ? Center(child: CircularProgressIndicator())
-            : _tripRoom == null
-            ? Center(child: Text('Trip room details not found'))
-            : Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _isEditingName
-                    ? Expanded(
-                  child: TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Edit Trip Room Name',
-                      prefixIcon: Icon(Icons.edit),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                  ),
-                )
-                    : Expanded(
-                  child: Text(
-                    'Name: ${_tripRoom!.name}',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    _isEditingName ? Icons.check : Icons.edit,
-                    color: Color(0xFF7A9E9F),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _isEditingName = !_isEditingName;
-                      if (!_isEditingName) {
-                        _editTripRoomDetails();
-                      }
-                    });
-                  },
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _isEditingDaysSpent
-                    ? Expanded(
-                  child: DropdownButtonFormField<int>(
-                    value: _selectedDaysSpent,
-                    items: [1, 2, 3, 4, 5].map((days) {
-                      return DropdownMenuItem<int>(
-                        value: days,
-                        child: Text('$days days'),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedDaysSpent = value!;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      labelText: 'Select Days Spent',
-                      prefixIcon: Icon(Icons.calendar_today),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                  ),
-                )
-
-                    : Expanded(
-                  child: Text(
-                    'Days Spent: $_selectedDaysSpent',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    _isEditingDaysSpent ? Icons.check : Icons.edit,
-                    color: Color(0xFF7A9E9F),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _isEditingDaysSpent = !_isEditingDaysSpent;
-                      if (!_isEditingDaysSpent) {
-                        _editTripRoomDetails();
-                      }
-                    });
-                  },
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Members:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            _memberNames.isEmpty
-                ? Text('No members found')
-                : Column(
-              children: _memberNames
-                  .map(
-                    (memberName) => ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Color(0xFF7A9E9F),
-                    child: Icon(
-                      Icons.person,
-                      color: Colors.white,
-                    ),
-                  ),
-                  title: Text(memberName),
-                ),
-              )
-                  .toList(),
-            ),
-            SizedBox(height: 16),
-            TextFormField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: 'Add Member by Email',
-                prefixIcon: Icon(Icons.email),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-            ),
-            SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _addMember,
-                child: Text('Add Member'),
-                style: ElevatedButton.styleFrom(
-                  primary: Color(0xFF7A9E9F),
-                  padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -1594,6 +1621,461 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
       ),
     );
   }
+}*/
+
+class TripRoomDetailsPage extends StatefulWidget {
+  final String tripRoomId;
+
+  TripRoomDetailsPage({required this.tripRoomId});
+
+  @override
+  _TripRoomDetailsPageState createState() => _TripRoomDetailsPageState();
 }
+
+class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
+  final _emailController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _daysSpentController = TextEditingController();
+  final _budgetController = TextEditingController();
+  final _peopleController = TextEditingController();
+  final _mealsController = TextEditingController();
+
+  bool _isLoading = false;
+  TripRoom? _tripRoom;
+  List<String> _memberNames = [];
+  bool _isEditingName = false;
+  bool _isEditingDaysSpent = false;
+  bool _isEditingBudget = false;
+  bool _isEditingPeople = false;
+  bool _isEditingMeals = false;
+  int? _selectedDaysSpent;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTripRoomDetails();
+    _loadMembersNames();
+  }
+
+  Future<void> _loadTripRoomDetails() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      if (widget.tripRoomId.isEmpty) {
+        throw Exception('tripRoomId is empty');
+      }
+      TripRoom tripRoom = await TripRoomController.getTripRoom(widget.tripRoomId);
+      setState(() {
+        _tripRoom = tripRoom;
+        _nameController.text = tripRoom.name;
+        _selectedDaysSpent = tripRoom.daysSpent;
+        _budgetController.text = tripRoom.budget.toString();
+        _peopleController.text = tripRoom.numberOfPersons.toString();
+        _mealsController.text = tripRoom.mealsPerDay.toString();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading trip room details: $e')),
+      );
+    }
+  }
+
+  Future<void> _loadMembersNames() async {
+    try {
+      List<String> memberNames = await TripRoomController.getMembersNames(widget.tripRoomId);
+      setState(() {
+        _memberNames = memberNames;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading member names: $e')),
+      );
+    }
+  }
+
+  Future<void> _addMember() async {
+    if (_tripRoom == null) {
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      String email = _emailController.text.trim();
+      String? userId = await TripRoomController.getUserIdByEmail(email);
+
+      if (userId != null) {
+        await TripRoomController.addMemberToTripRoom(widget.tripRoomId, userId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Member added successfully')),
+        );
+        _loadMembersNames();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User not found')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error adding member: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _editTripRoomDetails() async {
+    if (_tripRoom == null) {
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      String newName = _nameController.text.trim();
+      int? newDaysSpent;
+      double? newBudget;
+      int? newPeople;
+      int? newMeals;
+
+      if (_selectedDaysSpent != null) {
+        newDaysSpent = _selectedDaysSpent;
+      } else {
+        String newDaysSpentText = _daysSpentController.text.trim();
+        if (newDaysSpentText.isNotEmpty) {
+          newDaysSpent = int.tryParse(newDaysSpentText);
+        }
+      }
+
+      String budgetText = _budgetController.text.trim();
+      if (budgetText.isNotEmpty) {
+        newBudget = double.tryParse(budgetText);
+      }
+
+      String peopleText = _peopleController.text.trim();
+      if (peopleText.isNotEmpty) {
+        newPeople = int.tryParse(peopleText);
+      }
+
+      String mealsText = _mealsController.text.trim();
+      if (mealsText.isNotEmpty) {
+        newMeals = int.tryParse(mealsText);
+      }
+
+      if (newName.isNotEmpty) {
+        await TripRoomController.updateTripRoomName(widget.tripRoomId, newName);
+      }
+      if (newDaysSpent != null) {
+        await TripRoomController.updateTripRoomDaysSpent(widget.tripRoomId, newDaysSpent);
+      }
+      if (newBudget != null) {
+        await TripRoomController.updateTripRoomBudget(widget.tripRoomId, newBudget);
+      }
+      if (newPeople != null) {
+        await TripRoomController.updateTripRoomNumberOfPersons(widget.tripRoomId, newPeople);
+      }
+      if (newMeals != null) {
+        await TripRoomController.updateTripRoomMealsPerDay(widget.tripRoomId, newMeals);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Trip room details updated successfully')),
+      );
+
+      _loadTripRoomDetails();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating trip room details: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showFullSizeImage(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Image.network(
+                    _tripRoom!.profilePicture,
+                    fit: BoxFit.cover,
+                    height: MediaQuery.of(context).size.height * 0.5,
+                    width: MediaQuery.of(context).size.width * 0.9,
+                  ),
+                ),
+              ],
+            ),
+            Positioned(
+              bottom: 16.0,
+              right: 16.0,
+              child: FloatingActionButton(
+                onPressed: () async {
+                  await TripRoomController.changeProfilePicture(widget.tripRoomId);
+                  setState(() {
+                    _loadTripRoomDetails();
+                  });
+                },
+                child: Icon(Icons.edit, color: Colors.white),
+                backgroundColor: Color(0xFF7A9E9F),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Trip Room Details',
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 23,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator())
+            : _tripRoom == null
+            ? Center(child: Text('Trip room details not found'))
+            : SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Center(
+                child: Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    GestureDetector(
+                      onTap: () => _showFullSizeImage(context),
+                      child: CircleAvatar(
+                        radius: 90,
+                        backgroundImage: NetworkImage(_tripRoom!.profilePicture),
+                        backgroundColor: Colors.grey[200],
+                        onBackgroundImageError: (_, __) => Icon(
+                          Icons.person,
+                          size: 50,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    FloatingActionButton(
+                      onPressed: () async {
+                        await TripRoomController.changeProfilePicture(widget.tripRoomId);
+                        setState(() {
+                          _loadTripRoomDetails();
+                        });
+                      },
+                      mini: true,
+                      child: Icon(Icons.edit, color: Colors.white),
+                      backgroundColor: Color(0xFF7A9E9F),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 16),
+              _buildEditableRow(
+                label: 'Name',
+                value: _tripRoom!.name,
+                isEditing: _isEditingName,
+                onEditPressed: () {
+                  setState(() {
+                    _isEditingName = !_isEditingName;
+                    if (!_isEditingName) {
+                      _editTripRoomDetails();
+                    }
+                  });
+                },
+                controller: _nameController,
+                icon: Icons.edit,
+              ),
+              SizedBox(height: 16),
+              _buildEditableRow(
+                label: 'Days Spent',
+                value: _selectedDaysSpent.toString(),
+                isEditing: _isEditingDaysSpent,
+                onEditPressed: () {
+                  setState(() {
+                    _isEditingDaysSpent = !_isEditingDaysSpent;
+                    if (!_isEditingDaysSpent) {
+                      _editTripRoomDetails();
+                    }
+                  });
+                },
+                controller: _daysSpentController,
+                icon: Icons.edit,
+              ),
+              SizedBox(height: 16),
+              _buildEditableRow(
+                label: 'Budget',
+                value: _tripRoom!.budget.toString(),
+                isEditing: _isEditingBudget,
+                onEditPressed: () {
+                  setState(() {
+                    _isEditingBudget = !_isEditingBudget;
+                    if (!_isEditingBudget) {
+                      _editTripRoomDetails();
+                    }
+                  });
+                },
+                controller: _budgetController,
+                icon: Icons.edit,
+              ),
+              SizedBox(height: 16),
+              _buildEditableRow(
+                label: 'People',
+                value: _tripRoom!.numberOfPersons.toString(),
+                isEditing: _isEditingPeople,
+                onEditPressed: () {
+                  setState(() {
+                    _isEditingPeople = !_isEditingPeople;
+                    if (!_isEditingPeople) {
+                      _editTripRoomDetails();
+                    }
+                  });
+                },
+                controller: _peopleController,
+                icon: Icons.edit,
+              ),
+              SizedBox(height: 16),
+              _buildEditableRow(
+                label: 'Meals per Day',
+                value: _tripRoom!.mealsPerDay.toString(),
+                isEditing: _isEditingMeals,
+                onEditPressed: () {
+                  setState(() {
+                    _isEditingMeals = !_isEditingMeals;
+                    if (!_isEditingMeals) {
+                      _editTripRoomDetails();
+                    }
+                  });
+                },
+                controller: _mealsController,
+                icon: Icons.edit,
+              ),
+              SizedBox(height: 24),
+              TextField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: 'Add Member',
+                  hintText: 'Enter member email',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _addMember,
+                child: Text('Add Member'),
+                style: ElevatedButton.styleFrom(
+                  primary: Color(0xFF7A9E9F),
+                ),
+              ),
+              SizedBox(height: 24),
+              Text(
+                'Members:',
+                style: GoogleFonts.poppins(
+                  color: Color(0xFF7A9E9F),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              SizedBox(height: 8),
+              ListView.builder(
+                shrinkWrap: true,
+                itemCount: _memberNames.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(_memberNames[index]),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEditableRow({
+    required String label,
+    required String value,
+    required bool isEditing,
+    required VoidCallback onEditPressed,
+    required TextEditingController controller,
+    IconData? icon,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        SizedBox(height: 4),
+        Row(
+          children: [
+            isEditing
+                ? Expanded(
+              child: TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  hintText: 'Enter $label',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            )
+                : Expanded(
+              child: Text(
+                value,
+                style: GoogleFonts.poppins(
+                  color: Colors.black,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            if (icon != null)
+              IconButton(
+                icon: Icon(icon, color: Color(0xFF7A9E9F)),
+                onPressed: onEditPressed,
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 
 
