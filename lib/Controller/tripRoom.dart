@@ -246,7 +246,10 @@ class TripRoomController {
   // New method to update daysSpent
   static Future<void> updateTripRoomDaysSpent(String tripRoomId, int newDaysSpent) async {
     try {
-      await _firestore.collection('tripRooms').doc(tripRoomId).update({'daysSpent': newDaysSpent});
+      await _firestore
+          .collection('tripRooms')
+          .doc(tripRoomId)
+          .update({'daysSpent': newDaysSpent});
     } catch (e) {
       throw Exception('Failed to update daysSpent: $e');
     }
@@ -269,7 +272,7 @@ class TripRoomController {
       await FirebaseFirestore.instance
           .collection('tripRooms')
           .doc(tripRoomId)
-          .update({'numberOfPeople': numberOfPeople});
+          .update({'numberOfPersons': numberOfPeople});
     } catch (e) {
       throw Exception('Error updating number of people: $e');
     }

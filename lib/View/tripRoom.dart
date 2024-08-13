@@ -1623,6 +1623,29 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
   }
 }*/
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class TripRoomDetailsPage extends StatefulWidget {
   final String tripRoomId;
 
@@ -1637,8 +1660,8 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
   final _nameController = TextEditingController();
   final _daysSpentController = TextEditingController();
   final _budgetController = TextEditingController();
-  final _peopleController = TextEditingController();
-  final _mealsController = TextEditingController();
+  final _numPeopleController = TextEditingController();
+  final _numMealsController = TextEditingController();
 
   bool _isLoading = false;
   TripRoom? _tripRoom;
@@ -1646,8 +1669,8 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
   bool _isEditingName = false;
   bool _isEditingDaysSpent = false;
   bool _isEditingBudget = false;
-  bool _isEditingPeople = false;
-  bool _isEditingMeals = false;
+  bool _isEditingNumPeople = false;
+  bool _isEditingNumMeals = false;
   int? _selectedDaysSpent;
 
   @override
@@ -1671,8 +1694,8 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
         _nameController.text = tripRoom.name;
         _selectedDaysSpent = tripRoom.daysSpent;
         _budgetController.text = tripRoom.budget.toString();
-        _peopleController.text = tripRoom.numberOfPersons.toString();
-        _mealsController.text = tripRoom.mealsPerDay.toString();
+        _numPeopleController.text = tripRoom.numberOfPersons.toString();
+        _numMealsController.text = tripRoom.mealsPerDay.toString();
         _isLoading = false;
       });
     } catch (e) {
@@ -1742,8 +1765,8 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
       String newName = _nameController.text.trim();
       int? newDaysSpent;
       double? newBudget;
-      int? newPeople;
-      int? newMeals;
+      int? newNumPeople;
+      int? newNumMeals;
 
       if (_selectedDaysSpent != null) {
         newDaysSpent = _selectedDaysSpent;
@@ -1754,19 +1777,16 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
         }
       }
 
-      String budgetText = _budgetController.text.trim();
-      if (budgetText.isNotEmpty) {
-        newBudget = double.tryParse(budgetText);
+      if (_budgetController.text.isNotEmpty) {
+        newBudget = double.tryParse(_budgetController.text.trim());
       }
 
-      String peopleText = _peopleController.text.trim();
-      if (peopleText.isNotEmpty) {
-        newPeople = int.tryParse(peopleText);
+      if (_numPeopleController.text.isNotEmpty) {
+        newNumPeople = int.tryParse(_numPeopleController.text.trim());
       }
 
-      String mealsText = _mealsController.text.trim();
-      if (mealsText.isNotEmpty) {
-        newMeals = int.tryParse(mealsText);
+      if (_numMealsController.text.isNotEmpty) {
+        newNumMeals = int.tryParse(_numMealsController.text.trim());
       }
 
       if (newName.isNotEmpty) {
@@ -1778,11 +1798,11 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
       if (newBudget != null) {
         await TripRoomController.updateTripRoomBudget(widget.tripRoomId, newBudget);
       }
-      if (newPeople != null) {
-        await TripRoomController.updateTripRoomNumberOfPersons(widget.tripRoomId, newPeople);
+      if (newNumPeople != null) {
+        await TripRoomController.updateTripRoomNumberOfPersons(widget.tripRoomId, newNumPeople);
       }
-      if (newMeals != null) {
-        await TripRoomController.updateTripRoomMealsPerDay(widget.tripRoomId, newMeals);
+      if (newNumMeals != null) {
+        await TripRoomController.updateTripRoomMealsPerDay(widget.tripRoomId, newNumMeals);
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1814,7 +1834,7 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    Navigator.of(context).pop();
+                    Navigator.of(context).pop(); // Close the dialog when the image is tapped again
                   },
                   child: Image.network(
                     _tripRoom!.profilePicture,
@@ -1832,7 +1852,7 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
                 onPressed: () async {
                   await TripRoomController.changeProfilePicture(widget.tripRoomId);
                   setState(() {
-                    _loadTripRoomDetails();
+                    _loadTripRoomDetails(); // Reload the trip room details to update the image
                   });
                 },
                 child: Icon(Icons.edit, color: Colors.white),
@@ -1866,47 +1886,52 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
             ? Center(child: CircularProgressIndicator())
             : _tripRoom == null
             ? Center(child: Text('Trip room details not found'))
-            : SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Center(
-                child: Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    GestureDetector(
-                      onTap: () => _showFullSizeImage(context),
-                      child: CircleAvatar(
-                        radius: 90,
-                        backgroundImage: NetworkImage(_tripRoom!.profilePicture),
-                        backgroundColor: Colors.grey[200],
-                        onBackgroundImageError: (_, __) => Icon(
-                          Icons.person,
-                          size: 50,
-                          color: Colors.white,
-                        ),
+            : ListView(
+          children: <Widget>[
+            Center(
+              child: Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  GestureDetector(
+                    onTap: () => _showFullSizeImage(context),
+                    child: CircleAvatar(
+                      radius: 90,
+                      backgroundImage: NetworkImage(_tripRoom!.profilePicture),
+                      backgroundColor: Colors.grey[200],
+                      onBackgroundImageError: (_, __) => Icon(
+                        Icons.person,
+                        size: 50,
+                        color: Colors.white,
                       ),
                     ),
-                    FloatingActionButton(
-                      onPressed: () async {
-                        await TripRoomController.changeProfilePicture(widget.tripRoomId);
-                        setState(() {
-                          _loadTripRoomDetails();
-                        });
-                      },
-                      mini: true,
-                      child: Icon(Icons.edit, color: Colors.white),
-                      backgroundColor: Color(0xFF7A9E9F),
-                    ),
-                  ],
-                ),
+                  ),
+                  FloatingActionButton(
+                    onPressed: () async {
+                      await TripRoomController.changeProfilePicture(widget.tripRoomId);
+                      setState(() {
+                        _loadTripRoomDetails(); // Reload the trip room details to update the image
+                      });
+                    },
+                    mini: true,
+                    child: Icon(Icons.edit, color: Colors.white),
+                    backgroundColor: Color(0xFF7A9E9F),
+                  ),
+                ],
               ),
-              SizedBox(height: 16),
-              _buildEditableRow(
-                label: 'Name',
-                value: _tripRoom!.name,
-                isEditing: _isEditingName,
-                onEditPressed: () {
+            ),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.book, color: Color(0xFF7A9E9F)),
+              title: Text(
+                'Room Name: ${_tripRoom!.name}',
+                style: TextStyle(fontSize: 18),
+              ),
+              trailing: IconButton(
+                icon: Icon(
+                  Icons.edit,
+                  color: Color(0xFF7A9E9F),
+                ),
+                onPressed: () {
                   setState(() {
                     _isEditingName = !_isEditingName;
                     if (!_isEditingName) {
@@ -1914,31 +1939,34 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
                     }
                   });
                 },
+              ),
+            ),
+            _isEditingName
+                ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: TextFormField(
                 controller: _nameController,
-                icon: Icons.edit,
+                decoration: InputDecoration(
+                  hintText: 'Edit Trip Room Name',
+                  border: InputBorder.none,
+                ),
+                autofocus: true,
               ),
-              SizedBox(height: 16),
-              _buildEditableRow(
-                label: 'Days Spent',
-                value: _selectedDaysSpent.toString(),
-                isEditing: _isEditingDaysSpent,
-                onEditPressed: () {
-                  setState(() {
-                    _isEditingDaysSpent = !_isEditingDaysSpent;
-                    if (!_isEditingDaysSpent) {
-                      _editTripRoomDetails();
-                    }
-                  });
-                },
-                controller: _daysSpentController,
-                icon: Icons.edit,
+            )
+                : Container(),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.monetization_on, color: Color(0xFF7A9E9F)),
+              title: Text(
+                'Budget: \RM${_tripRoom!.budget}',
+                style: TextStyle(fontSize: 18),
               ),
-              SizedBox(height: 16),
-              _buildEditableRow(
-                label: 'Budget',
-                value: _tripRoom!.budget.toString(),
-                isEditing: _isEditingBudget,
-                onEditPressed: () {
+              trailing: IconButton(
+                icon: Icon(
+                  Icons.edit,
+                  color: Color(0xFF7A9E9F),
+                ),
+                onPressed: () {
                   setState(() {
                     _isEditingBudget = !_isEditingBudget;
                     if (!_isEditingBudget) {
@@ -1946,136 +1974,193 @@ class _TripRoomDetailsPageState extends State<TripRoomDetailsPage> {
                     }
                   });
                 },
+              ),
+            ),
+            _isEditingBudget
+                ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: TextFormField(
                 controller: _budgetController,
-                icon: Icons.edit,
-              ),
-              SizedBox(height: 16),
-              _buildEditableRow(
-                label: 'People',
-                value: _tripRoom!.numberOfPersons.toString(),
-                isEditing: _isEditingPeople,
-                onEditPressed: () {
-                  setState(() {
-                    _isEditingPeople = !_isEditingPeople;
-                    if (!_isEditingPeople) {
-                      _editTripRoomDetails();
-                    }
-                  });
-                },
-                controller: _peopleController,
-                icon: Icons.edit,
-              ),
-              SizedBox(height: 16),
-              _buildEditableRow(
-                label: 'Meals per Day',
-                value: _tripRoom!.mealsPerDay.toString(),
-                isEditing: _isEditingMeals,
-                onEditPressed: () {
-                  setState(() {
-                    _isEditingMeals = !_isEditingMeals;
-                    if (!_isEditingMeals) {
-                      _editTripRoomDetails();
-                    }
-                  });
-                },
-                controller: _mealsController,
-                icon: Icons.edit,
-              ),
-              SizedBox(height: 24),
-              TextField(
-                controller: _emailController,
+                keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'Add Member',
-                  hintText: 'Enter member email',
-                  border: OutlineInputBorder(),
+                  hintText: 'Edit Budget',
+                  border: InputBorder.none,
                 ),
+                autofocus: true,
               ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _addMember,
-                child: Text('Add Member'),
-                style: ElevatedButton.styleFrom(
-                  primary: Color(0xFF7A9E9F),
-                ),
+            )
+                : Container(),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.people, color: Color(0xFF7A9E9F)),
+              title: Text(
+                'Number of People: ${_tripRoom!.numberOfPersons}',
+                style: TextStyle(fontSize: 18),
               ),
-              SizedBox(height: 24),
-              Text(
-                'Members:',
-                style: GoogleFonts.poppins(
+              trailing: IconButton(
+                icon: Icon(
+                  Icons.edit,
                   color: Color(0xFF7A9E9F),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
                 ),
-              ),
-              SizedBox(height: 8),
-              ListView.builder(
-                shrinkWrap: true,
-                itemCount: _memberNames.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(_memberNames[index]),
-                  );
+                onPressed: () {
+                  setState(() {
+                    _isEditingNumPeople = !_isEditingNumPeople;
+                    if (!_isEditingNumPeople) {
+                      _editTripRoomDetails();
+                    }
+                  });
                 },
               ),
-            ],
+            ),
+            _isEditingNumPeople
+                ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: TextFormField(
+                controller: _numPeopleController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: 'Edit Number of People',
+                  border: InputBorder.none,
+                ),
+                autofocus: true,
+              ),
+            )
+                : Container(),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.restaurant, color: Color(0xFF7A9E9F)),
+              title: Text(
+                'Meals Per Day: ${_tripRoom!.mealsPerDay}',
+                style: TextStyle(fontSize: 18),
+              ),
+              trailing: IconButton(
+                icon: Icon(
+                  Icons.edit,
+                  color: Color(0xFF7A9E9F),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isEditingNumMeals = !_isEditingNumMeals;
+                    if (!_isEditingNumMeals) {
+                      _editTripRoomDetails();
+                    }
+                  });
+                },
+              ),
+            ),
+            _isEditingNumMeals
+                ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: TextFormField(
+                controller: _numMealsController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: 'Edit Meals Per Day',
+                  border: InputBorder.none,
+                ),
+                autofocus: true,
+              ),
+            )
+                : Container(),
+        Divider(),
+        ListTile(
+          leading: Icon(Icons.calendar_today, color: Color(0xFF7A9E9F)),
+          title: Text(
+            'Days Spent: ${_tripRoom!.daysSpent}',
+            style: TextStyle(fontSize: 18),
           ),
+          trailing: IconButton(
+            icon: Icon(
+              Icons.edit,
+              color: Color(0xFF7A9E9F),
+            ),
+            onPressed: () {
+              setState(() {
+                _isEditingDaysSpent = !_isEditingDaysSpent;
+                if (!_isEditingDaysSpent) {
+                  _editTripRoomDetails();
+                }
+              });
+            },
+          ),
+        ),
+        _isEditingDaysSpent
+            ? Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: DropdownButtonFormField<int>(
+            value: _selectedDaysSpent,
+            items: [1, 2, 3, 4, 5, 6, 7].map((days) {
+              return DropdownMenuItem<int>(
+                value: days,
+                child: Text('$days days'),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedDaysSpent = value!;
+              });
+            },
+            decoration: InputDecoration(
+              hintText: 'Select Days Spent',
+              border: InputBorder.none,
+            ),
+          ),
+        )
+
+        : Container(),
+            Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Text(
+                'Members',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF7A9E9F),
+                ),
+              ),
+            ),
+            for (var name in _memberNames)
+              ListTile(
+                title: Text(name),
+                leading: Icon(
+                  Icons.person,
+                  color: Color(0xFF7A9E9F),
+                ),
+              ),
+            Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        hintText: 'Add member by email',
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.add_circle,
+                      color: Color(0xFF7A9E9F),
+                    ),
+                    onPressed: _addMember,
+                  ),
+                ],
+              ),
+            ),
+            Divider(),
+          ],
         ),
       ),
     );
   }
-
-  Widget _buildEditableRow({
-    required String label,
-    required String value,
-    required bool isEditing,
-    required VoidCallback onEditPressed,
-    required TextEditingController controller,
-    IconData? icon,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            color: Color(0xFF7A9E9F),
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        SizedBox(height: 4),
-        Row(
-          children: [
-            isEditing
-                ? Expanded(
-              child: TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  hintText: 'Enter $label',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            )
-                : Expanded(
-              child: Text(
-                value,
-                style: GoogleFonts.poppins(
-                  color: Colors.black,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-            if (icon != null)
-              IconButton(
-                icon: Icon(icon, color: Color(0xFF7A9E9F)),
-                onPressed: onEditPressed,
-              ),
-          ],
-        ),
-      ],
-    );
-  }
 }
+
+
 
 
 
