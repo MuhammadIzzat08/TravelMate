@@ -172,7 +172,12 @@ class Location {
       'Visited': visited,
     };
   }
+
+  bool isRestaurant() {
+    return type != null && (type!.contains("halal") || type!.contains("restaurant"));
+  }
 }
+
 
 
 

@@ -78,9 +78,22 @@ class _TripRoomViewState extends State<TripRoomView> {
 
   void _generateAndLoadItinerary() async {
     try {
-      List<Location> itinerary = await _itineraryController.generateItinerary(widget.tripRoomId);
+      int mealsPerDay = await _itineraryController.fetchMealsPerDay(
+          widget.tripRoomId);
+      print("Meals per Day: $mealsPerDay");
+
+      int daysSpent = await _itineraryController.fetchdaysSpent(
+          widget.tripRoomId);
+      print("Meals per Day: $daysSpent");
+
+      List<Location> itinerary = await _itineraryController.generateItinerary(
+          widget.tripRoomId, mealsPerDay,daysSpent);
+      print("Generated Itinerary: ${itinerary.length} locations");
+
       if (tripRoom.daysSpent > 0) {
-        _dailyItinerary = _splitItineraryIntoDays(itinerary, tripRoom.daysSpent);
+        _dailyItinerary =
+            _splitItineraryIntoDays(itinerary, tripRoom.daysSpent);
+        print("Split Itinerary into ${tripRoom.daysSpent} days");
         setState(() {});
       } else {
         print('Invalid trip daysSpent');
@@ -90,8 +103,10 @@ class _TripRoomViewState extends State<TripRoomView> {
     }
   }
 
-  Map<int, List<Location>> _splitItineraryIntoDays(List<Location> itinerary, int daysSpent) {
-    const int hoursPerDay = endHour - initialStartHour; // Hours available each day
+  Map<int, List<Location>> _splitItineraryIntoDays(List<Location> itinerary,
+      int daysSpent) {
+    const int hoursPerDay = endHour -
+        initialStartHour; // Hours available each day
     const int minutesPerDay = hoursPerDay * 60;
     Map<int, List<Location>> dailyItinerary = {};
 
@@ -99,7 +114,8 @@ class _TripRoomViewState extends State<TripRoomView> {
     int remainingMinutesInDay = minutesPerDay;
 
     for (Location location in itinerary) {
-      int approximateTimeMinutes = ((location.approximateTime ?? 2) * 60).ceil();
+      int approximateTimeMinutes = ((location.approximateTime ?? 2) * 60)
+          .ceil();
 
       if (remainingMinutesInDay >= approximateTimeMinutes) {
         // Add location to the current day
@@ -124,8 +140,9 @@ class _TripRoomViewState extends State<TripRoomView> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('ADVICE'),
-          content: Text('Your itinerary includes a significant number of locations.'
-              ' Please be aware that completing this itinerary may require more than one day.'),
+          content: Text(
+              'Your itinerary includes a significant number of locations.'
+                  ' Please be aware that completing this itinerary may require more than one day.'),
           actions: [
             TextButton(
               child: Text(
@@ -162,7 +179,8 @@ class _TripRoomViewState extends State<TripRoomView> {
               snippet: location.description ?? 'No description',
             ),
             icon: location.visited
-                ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)
+                ? BitmapDescriptor.defaultMarkerWithHue(
+                BitmapDescriptor.hueGreen)
                 : BitmapDescriptor.defaultMarker,
           );
         }
@@ -172,7 +190,8 @@ class _TripRoomViewState extends State<TripRoomView> {
   }
 
   String _formatTimeRange(DateTime startTime, DateTime endTime) {
-    return '${DateFormat.jm().format(startTime)} - ${DateFormat.jm().format(endTime)}';
+    return '${DateFormat.jm().format(startTime)} - ${DateFormat.jm().format(
+        endTime)}';
   }
 
   void _toggleLocationVisited(Location location) {
@@ -186,7 +205,7 @@ class _TripRoomViewState extends State<TripRoomView> {
     setState(() {}); // Force the UI to refresh
   }
 
-  @override
+   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
