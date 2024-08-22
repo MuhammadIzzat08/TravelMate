@@ -301,14 +301,36 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
         backgroundColor: Colors.white,
         iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
       ),
+
       body: Column(
         children: [
+          SizedBox(height: 10),
           ElevatedButton(
             onPressed: () {
               _showFilterDialog(context);
             },
-            child: Text('Filter Locations'),
+            style: ElevatedButton.styleFrom(
+              primary: Color(0xFF7A9E9F),
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+            ),
+            child: SizedBox(
+              width: double.infinity, // Makes the button full width
+              child: Center(
+                child: Text(
+                  'Filter Locations',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.0,
+                  ),
+                ),
+              ),
+            ),
           ),
+          SizedBox(height: 10,),
           Expanded(
             child: ListView.builder(
               itemCount: filteredLocations.length,
@@ -490,35 +512,94 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.location.name,style: GoogleFonts.poppins(
-          color: Color(0xFF7A9E9F),
-          fontWeight: FontWeight.bold,
-          fontSize: 20,
-        ),),
+        title: Text(
+          widget.location.name,
+          style: GoogleFonts.poppins(
+            color: Color(0xFF7A9E9F),
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
         backgroundColor: Colors.white,
         iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Description: ${widget.location.description}'),
-            Text('Type: ${widget.location.type}'),
-            Text('Operating Hours: ${widget.location.operatingHour}'),
-            Text('Price: ${widget.location.price}'),
-            Text('Cuisine: ${widget.location.cuisine}'),
-            Text('Purpose: ${widget.location.purpose}'),
-            Text('Accessibility: ${widget.location.accessability}'),
-            ElevatedButton(
-              onPressed: _addToWishlist,
-              child: Text('Add To Wishlist',),
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFEFEFEF),
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDetailRow('Description', widget.location.description),
+                      _buildDetailRow('Type', widget.location.type),
+                      _buildDetailRow('Operating Hours', widget.location.operatingHour),
+                      _buildDetailRow('Price', widget.location.price),
+                      _buildDetailRow('Cuisine', widget.location.cuisine),
+                      _buildDetailRow('Purpose', widget.location.purpose),
+                      _buildDetailRow('Accessibility', widget.location.accessability),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 20.0),
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: _addToWishlist,
+                  icon: Icon(Icons.favorite_border),
+                  label: Text(
+                    'Add To Wishlist',
+                    style: GoogleFonts.poppins(),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    primary: Color(0xFF7A9E9F),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$label:',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF7A9E9F),
+            ),
+          ),
+          SizedBox(height: 4.0),
+          Text(
+            value,
+            style: GoogleFonts.poppins(),
+            textAlign: TextAlign.justify,
+          ),
+        ],
+      ),
+    );
+  }
+
+
 
   void _addToWishlist() async {
     final wishlistItem = WishlistItem(
