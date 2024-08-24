@@ -37,8 +37,25 @@ class _RegistrationPageState extends State<RegistrationPage> {
         'PhoneNum': _phoneNumController.text,
       });
 
-      // Registration successful, you can navigate to another screen
-      print('Registration successful');
+      // Show a success message and navigate to LoginScreen
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Success'),
+            content: Text('Registration successful!'),
+          );
+        },
+      );
+
+      // Wait for 2 seconds before navigating to the LoginScreen
+      Future.delayed(Duration(seconds: 2), () {
+        Navigator.of(context).pop(); // Close the dialog
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+        );
+      });
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
@@ -46,6 +63,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
       print('Registration failed: $_errorMessage');
     }
   }
+
 
   void _goToLoginScreen() {
     Navigator.push(
