@@ -227,7 +227,7 @@ class ItineraryController {
   }*/ //THIS IS WORKING WITHOUT MEALSPERDAY
 
 //BAWAH NI WORKS BUT TAK TERSUSUN, DIA BACK TO BACK MEALS NYA.
-  /*Future<List<Location>> generateItinerary(String tripRoomId, int mealsPerDay, int daysSpent) async {
+  Future<List<Location>> generateItinerary(String tripRoomId, int mealsPerDay, int daysSpent) async {
     try {
       final userPosition = await determinePosition();
       final wishlistItems = await getWishlistItems(tripRoomId);
@@ -294,82 +294,11 @@ class ItineraryController {
       print('Error generating itinerary: $e');
       throw e;
     }
-  }*/
+  }
 
 
   //BELUM JADIII ARGHHH
-  Future<List<Location>> generateItinerary(String tripRoomId, int mealsPerDay, int daysSpent) async {
-    try {
-      final userPosition = await determinePosition();
-      final wishlistItems = await getWishlistItems(tripRoomId);
 
-      sortLocationsByDistance(wishlistItems, userPosition);
-
-      DateTime currentTime = DateTime(2024, 1, 1, 9, 0); // Start at 9 AM
-      List<Location> finalItinerary = [];
-
-      int currentDay = 1;
-      int dayMealsAdded = 0;
-      int totalMealsAdded = 0;
-
-      while (currentDay <= daysSpent && wishlistItems.isNotEmpty) {
-        List<Location> filteredLocations = filterLocationsByTime(wishlistItems, currentTime);
-
-        if (filteredLocations.isNotEmpty) {
-          Location nextLocation = filteredLocations.first;
-
-          // Meal timing conditions
-          bool isMealTime = (currentTime.hour >= 9 && currentTime.hour < 11 && dayMealsAdded == 0) || // Breakfast
-              (currentTime.hour >= 13 && currentTime.hour < 15 && dayMealsAdded == 1) || // Lunch
-              (currentTime.hour >= 19 && currentTime.hour < 22 && dayMealsAdded == 2);  // Dinner
-
-          // Add a meal if it's meal time and the location is a restaurant
-          if ((nextLocation.type == "Halal" || nextLocation.type == "Non-Halal") && isMealTime) {
-            finalItinerary.add(nextLocation);
-            dayMealsAdded++;
-            totalMealsAdded++;
-          }
-          // Add non-meal locations or any location if meals are already satisfied for the day
-          else if (dayMealsAdded >= mealsPerDay || (nextLocation.type != "Halal" && nextLocation.type != "Non-Halal")) {
-            finalItinerary.add(nextLocation);
-          }
-
-          currentTime = currentTime.add(Duration(hours: nextLocation.approximateTime!.toInt()));
-          wishlistItems.remove(nextLocation);
-
-          // Check if the day is over (time > 11 PM) or if all meals for the day are added
-          if (currentTime.hour > 23 || dayMealsAdded >= mealsPerDay) {
-            currentDay++;
-            dayMealsAdded = 0; // Reset meals for the new day
-            currentTime = DateTime(currentTime.year, currentTime.month, currentTime.day + 1, 9, 0); // Start next day at 9 AM
-          }
-        } else {
-          // Move to the next day if no more locations can be added
-          currentDay++;
-          dayMealsAdded = 0; // Reset meals for the new day
-          currentTime = DateTime(currentTime.year, currentTime.month, currentTime.day + 1, 9, 0); // Start next day at 9 AM
-        }
-      }
-
-      // Ensure that each day has the required number of meals
-      if (totalMealsAdded < mealsPerDay * daysSpent) {
-        for (var i = totalMealsAdded; i < mealsPerDay * daysSpent; i++) {
-          for (var location in wishlistItems) {
-            if (location.type == "Halal" || location.type == "Non-Halal") {
-              finalItinerary.add(location);
-              wishlistItems.remove(location);
-              break;
-            }
-          }
-        }
-      }
-
-      return finalItinerary;
-    } catch (e) {
-      print('Error generating itinerary: $e');
-      throw e;
-    }
-  }
 
 
 

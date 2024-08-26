@@ -278,6 +278,7 @@ class FilteredItineraryScreen extends StatefulWidget {
 
 class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
   final FilteredItineraryController _controller = FilteredItineraryController();
+  final WishlistController _wishlistController = WishlistController();
 
   List<LocationFilter> filteredLocations = [];
 
@@ -291,7 +292,8 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Filtered Locations',
+        title: Text(
+          'Filtered Locations',
           style: GoogleFonts.poppins(
             color: Color(0xFF7A9E9F),
             fontWeight: FontWeight.bold,
@@ -301,7 +303,6 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
         backgroundColor: Colors.white,
         iconTheme: IconThemeData(color: Color(0xFF7A9E9F)),
       ),
-
       body: Column(
         children: [
           SizedBox(height: 10),
@@ -330,7 +331,31 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
               ),
             ),
           ),
-          SizedBox(height: 10,),
+          SizedBox(height: 10),
+          ElevatedButton(
+            onPressed: _addAllToWishlist,
+            style: ElevatedButton.styleFrom(
+              primary: Color(0xFF7A9E9F),
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+            ),
+            child: SizedBox(
+              width: double.infinity, // Makes the button full width
+              child: Center(
+                child: Text(
+                  'Add All to Wishlist',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.0,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 10),
           Expanded(
             child: ListView.builder(
               itemCount: filteredLocations.length,
@@ -368,12 +393,14 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return AlertDialog(
-              title: Text('Filter Locations',
+              title: Text(
+                'Filter Locations',
                 style: GoogleFonts.poppins(
                   color: Color(0xFF7A9E9F),
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
-                ),),
+                ),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,31 +416,31 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
                       ],
                       setState,
                     ),
-                    SizedBox(height:30),
+                    SizedBox(height: 30),
                     _buildFilterCheckboxList(
                       'Cuisine Status:',
                       selectedPlaceTypes,
                       [
                         'Halal',
-                        'Non-Halal'
+                        'Non-Halal',
                       ],
                       setState,
                     ),
-                    SizedBox(height:30),
+                    SizedBox(height: 30),
                     _buildFilterCheckboxList(
                       'Cuisine Type:',
                       selectedCuisineTypes,
                       ['Western', 'Malay', 'Chinese'],
                       setState,
                     ),
-                    SizedBox(height:30),
+                    SizedBox(height: 30),
                     _buildFilterCheckboxList(
                       'Price Rate:',
                       selectedPriceRates,
                       ['Moderate', 'Affordable', 'Expensive'],
                       setState,
                     ),
-                    SizedBox(height:30),
+                    SizedBox(height: 30),
                     _buildFilterCheckboxList(
                       'Accessibility:',
                       selectedAccessabilities,
@@ -428,24 +455,28 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  child: Text('Cancel',
+                  child: Text(
+                    'Cancel',
                     style: GoogleFonts.poppins(
                       color: Color(0xFF7A9E9F),
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                    ),),
+                    ),
+                  ),
                 ),
                 TextButton(
                   onPressed: () {
                     _applyFilters();
                     Navigator.pop(context);
                   },
-                  child: Text('Apply',
+                  child: Text(
+                    'Apply',
                     style: GoogleFonts.poppins(
                       color: Color(0xFF7A9E9F),
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                    ),),
+                    ),
+                  ),
                 ),
               ],
             );
@@ -490,8 +521,33 @@ class _FilteredItineraryScreenState extends State<FilteredItineraryScreen> {
       ],
     );
   }
-}
 
+  void _addAllToWishlist() async {
+    // Iterate over all filtered locations and add them to the wishlist
+    for (final location in filteredLocations) {
+      final wishlistItem = WishlistItem(
+        tripRoomId: widget.tripRoomId, // Use the passed trip room ID
+        locationId: location.id,
+      );
+
+      // Check if the location already exists in the wishlist
+      final existsInWishlist = await _wishlistController.checkLocationExistsInWishlist(wishlistItem);
+
+      if (!existsInWishlist) {
+        await _wishlistController.addToWishlist(wishlistItem).catchError((error) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Failed to add ${location.name} to Wishlist: $error'),
+          ));
+        });
+      }
+    }
+
+    // Show a success message after adding all locations
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('All filtered locations added to Wishlist'),
+    ));
+  }
+}
 
 
 //-------------------------Details location Screen------------------------------
