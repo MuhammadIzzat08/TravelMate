@@ -1,6 +1,7 @@
-// views/trip_room_view.dart
+
 
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -205,7 +206,7 @@ class _TripRoomViewState extends State<TripRoomView> {
     setState(() {}); // Force the UI to refresh
   }
 
-   @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(

@@ -177,7 +177,7 @@ class ItineraryController {
   }
 
 
-  /*Future<List<Location>> generateItinerary(String tripRoomId) async {
+ /* Future<List<Location>> generateItinerary(String tripRoomId) async {
     try {
       final userPosition = await determinePosition();
       final wishlistItems = await getWishlistItems(tripRoomId);
@@ -525,6 +525,5 @@ class FilteredItineraryController {
     return filteredResult;
   }
 }*/ //tutup jap
-
 
 
