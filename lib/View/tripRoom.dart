@@ -57,6 +57,7 @@ class _TripRoomViewState extends State<TripRoomView> {
   }
 
   Future<void> _fetchTripRoom() async {
+
     try {
       tripRoom = await TripRoomController.getTripRoom(widget.tripRoomId);
       setState(() {});
@@ -190,6 +191,34 @@ class _TripRoomViewState extends State<TripRoomView> {
     }).toSet();
   }
 
+  Set<Polyline> _createPolylines() {
+    Set<Polyline> polylines = {};
+
+    _dailyItinerary.values.forEach((dayLocations) {
+      if (dayLocations.length > 1) {
+        List<LatLng> polylineCoordinates = [];
+
+        for (var location in dayLocations) {
+          if (location.latitude != null && location.longitude != null) {
+            polylineCoordinates.add(LatLng(location.latitude!, location.longitude!));
+          }
+        }
+
+        polylines.add(Polyline(
+          polylineId: PolylineId('polyline_${polylines.length}'),
+          visible: true,
+          points: polylineCoordinates,
+          color: Colors.redAccent,
+          width: 5,
+        ));
+      }
+    });
+
+    return polylines;
+  }
+
+
+
   String _formatTimeRange(DateTime startTime, DateTime endTime) {
     return '${DateFormat.jm().format(startTime)} - ${DateFormat.jm().format(
         endTime)}';
@@ -247,6 +276,7 @@ class _TripRoomViewState extends State<TripRoomView> {
                 zoom: 12,
               ),
               markers: _createMarkers(),
+              polylines: _createPolylines(),
             )
                 : Center(child: CircularProgressIndicator()),
           ),
@@ -807,7 +837,7 @@ class MainPage2 extends StatefulWidget {
 }
 class _MainPage2State extends State<MainPage2> {
   int _currentIndex = 0;
-  late String _loggedInUserId;
+  /*late*/ String _loggedInUserId = '';
   final ExpenseController _expenseController = ExpenseController(); // Create an instance of ExpenseController
 
   @override
